@@ -134,6 +134,7 @@ The parser recognizes these formats:
 - `[1]` (brackets)
 - `(1)` (parentheses)
 - `1.` or `1:` (number at start of line - common in PDFs)
+- `**1**` (Markdown bold - double asterisks)
 
 ### Creating Choices
 
@@ -308,6 +309,7 @@ PDF files are automatically converted to text and then parsed using the text for
 - `[1]` (brackets)
 - `(1)` (parentheses)
 - `1.` or `1:` at the start of a line (common in Fighting Fantasy books)
+- `**1**` (Markdown bold with double asterisks)
 
 **Tips for PDFs:**
 - The parser preserves line breaks and text structure from the PDF

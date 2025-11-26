@@ -2,9 +2,10 @@
 
 ## Summary
 
-This PR includes two major improvements:
-1. **Fixes PDF import** to properly recognize section numbers
+This PR includes three major improvements:
+1. **Fixes PDF import** to properly recognize section numbers with 5 different formats
 2. **Improves section 0 handling** with a better UX flow for introductions
+3. **Adds Markdown bold support** for section numbers (**X** format)
 
 ## Part 1: PDF Import Fixes
 
@@ -16,17 +17,18 @@ PDF imports were not working properly because:
 
 ### Solution
 - **Enhanced PDF text extraction** to preserve line breaks using Y coordinates from PDF text items
-- **Improved section number regex** to support multiple formats commonly found in Fighting Fantasy books:
+- **Improved section number regex** to support 5 different formats commonly found in gamebooks:
   - `Section 1:` or `SECTION 1:`
   - `[1]` (brackets)
   - `(1)` (parentheses)
   - `1.` or `1:` at start of line
-- **Updated documentation** to explain supported PDF formats
+  - `**1**` (Markdown bold with double asterisks)
+- **Updated documentation** to explain supported formats
 
 ### Technical Changes (PDF)
 - `index.html` (lines 960-989): Enhanced `handlePDFFile()` to preserve line structure during text extraction
-- `index.html` (lines 1043-1059): Updated section regex to handle 4 different numbering formats
-- `FORMAT-GUIDE.md`: Documented PDF section number formats and parsing behavior
+- `index.html` (lines 1062-1079): Updated section regex to handle 5 different numbering formats
+- `FORMAT-GUIDE.md`: Documented all supported section number formats and parsing behavior
 
 ## Part 2: Section 0 (Introduction) Improvements
 
@@ -56,6 +58,27 @@ Section 0 wasn't being utilized properly:
 5. Game initializes stats and inventory
 6. Player begins at section 1
 
+## Part 3: Markdown Bold Section Numbers
+
+### Problem
+Some adventure books use Markdown formatting, where section numbers are formatted as `**0**`, `**1**`, etc. (bold text). The parser didn't recognize this format.
+
+### Solution
+- **Added 5th regex pattern** to detect `**X**` format (double asterisks)
+- Pattern matches Markdown bold: `\*\*(\d+)\*\*`
+- Commonly found in Markdown-formatted adventure books and exports
+
+### Technical Changes (Markdown Bold)
+- `index.html` (line 1067): Added `\*\*(\d+)\*\*` as 5th capture group in section regex
+- `index.html` (line 1073): Updated to check match[5] for the asterisk pattern
+- `FORMAT-GUIDE.md`: Documented `**X**` format support
+- Created `test-markdown-bold.txt`: Complete test adventure using **X** format
+
+### Benefits
+- Parser now works with Markdown-formatted adventure books
+- Supports content exported from Markdown editors
+- More versatile for different authoring workflows
+
 ## Files Changed
 
 ### Core Functionality
@@ -66,13 +89,15 @@ Section 0 wasn't being utilized properly:
 - `test-section-0.txt` - Demonstrates section 0 intro flow
 - `test-pdf-format-1.txt` - Tests PDF format "1." with section 0
 - `test-pdf-format-2.txt` - Tests PDF format "[1]" with section 0
+- `test-markdown-bold.txt` - Tests Markdown bold format "**X**" with section 0
 
 ## Testing
 
 ### PDF Import Testing
 ✅ Enhanced text extraction preserves line breaks
-✅ Supports 4 different section number formats
+✅ Supports 5 different section number formats
 ✅ Section numbers properly recognized from PDF text
+✅ Markdown bold format (**X**) works correctly
 
 ### Section 0 Testing
 ✅ Section 0 displays first when book is loaded
@@ -88,6 +113,7 @@ Section 0 wasn't being utilized properly:
 - [ ] Import PDF with "1." format - verify sections recognized
 - [ ] Import PDF with "[1]" format - verify sections recognized
 - [ ] Import PDF with "(1)" format - verify sections recognized
+- [ ] Import file with "**1**" format - verify sections recognized
 - [ ] Verify line breaks preserved in extracted text
 
 ### Section 0 Flow
@@ -105,8 +131,11 @@ Section 0 wasn't being utilized properly:
   - `924add4` - Fix PDF import section recognition
   - `5ce9600` - Add PR description
   - `b7ab005` - Improve section 0 handling with Start Adventure button
+  - `85ab670` - Update PR description
+  - `84f0ceb` - Add support for Markdown bold section numbers (**X**)
 
 ## Related Issues
-- Fixes PDF import section number recognition issue
+- Fixes PDF import section number recognition issue (now supports 5 formats)
 - Implements proper section 0 (introduction) handling following Fighting Fantasy conventions
 - Improves UX for gamebooks with introductory content
+- Adds Markdown bold format support for better compatibility with Markdown-authored adventures

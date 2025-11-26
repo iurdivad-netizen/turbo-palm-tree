@@ -1063,13 +1063,14 @@
             // - "Section 1:" or "SECTION 1:"
             // - "[1]" or "(1)"
             // - "1." or "1:" at start of line (common in PDF Fighting Fantasy books)
-            const sectionRegex = /(?:(?:Section|SECTION)\s*(\d+)\s*(?:\]|:|\.|–|—)|\[(\d+)\]|\((\d+)\)|^(\d+)[\.:]\s)/gim;
+            // - "**1**" (Markdown bold - common in Markdown adventure books)
+            const sectionRegex = /(?:(?:Section|SECTION)\s*(\d+)\s*(?:\]|:|\.|–|—)|\[(\d+)\]|\((\d+)\)|^(\d+)[\.:]\s|\*\*(\d+)\*\*)/gim;
             const matches = [];
             let match;
 
             while ((match = sectionRegex.exec(text)) !== null) {
-                // Find which capture group matched (we have 4 possible patterns)
-                const sectionId = parseInt(match[1] || match[2] || match[3] || match[4]);
+                // Find which capture group matched (we have 5 possible patterns)
+                const sectionId = parseInt(match[1] || match[2] || match[3] || match[4] || match[5]);
                 matches.push({
                     id: sectionId,
                     start: match.index,
