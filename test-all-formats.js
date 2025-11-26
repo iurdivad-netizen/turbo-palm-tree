@@ -11,7 +11,8 @@ const files = [
 ];
 
 // FIXED: All patterns now require start of line to avoid false positives
-const sectionRegex = /(?:^(?:Section|SECTION)\s*(\d+)\s*(?:\]|:|\.|–|—)|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
+// Note: Colons and other punctuation are OPTIONAL for "Section N" format
+const sectionRegex = /(?:^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
 
 files.forEach(filename => {
     console.log(`\n=== Testing ${filename} ===`);
