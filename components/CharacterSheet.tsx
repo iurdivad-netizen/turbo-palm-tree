@@ -3,7 +3,7 @@
 import { useGameStore } from '@/store/gameStore'
 
 export default function CharacterSheet() {
-  const { stats } = useGameStore()
+  const { stats, undoCount } = useGameStore()
 
   if (!stats) return null
 
@@ -65,6 +65,25 @@ export default function CharacterSheet() {
         initial={stats.initialLuck}
         label="LUCK"
       />
+
+      {/* Undo count and penalty */}
+      {undoCount > 0 && (
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-300 dark:border-amber-700">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                Undos Used:
+              </span>
+              <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                {undoCount}
+              </span>
+            </div>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+              Score Penalty: -{undoCount} points
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Quick stat adjustment buttons (for testing/debugging) */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">

@@ -1,6 +1,16 @@
 import { create } from 'zustand'
 import { Book, GameState, Item, CharacterStats, Section } from '@/types/game'
 
+interface GameStateSnapshot {
+  currentSection: number
+  stats: CharacterStats | null
+  inventory: Item[]
+  visitedSections: Set<number>
+  inCombat: boolean
+  enemyCurrentStamina: number
+  combatLog: string[]
+}
+
 interface GameStore {
   // Book data
   currentBook: Book | null
@@ -16,6 +26,10 @@ interface GameStore {
   inCombat: boolean
   enemyCurrentStamina: number
   combatLog: string[]
+
+  // Undo functionality
+  history: GameStateSnapshot[]
+  undoCount: number
 
   // Actions
   loadBook: (book: Book) => void
@@ -42,6 +56,9 @@ interface GameStore {
   // Luck test
   testLuck: () => { success: boolean; newLuck: number }
 
+  // Undo action
+  undo: () => boolean
+
   // Save/Load
   saveGame: () => void
   loadGame: (saveId: string) => void
@@ -59,6 +76,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   inCombat: false,
   enemyCurrentStamina: 0,
   combatLog: [],
+  history: [],
+  undoCount: 0,
 
   // Load a book
   loadBook: (book: Book) => {
@@ -69,6 +88,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       stats: null,
       inventory: [],
       visitedSections: new Set(),
+      history: [],
+      undoCount: 0,
     })
   },
 
@@ -92,6 +113,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       inventory: currentBook.startingItems || [],
       currentSection: currentBook.startingSection,
       visitedSections: new Set([currentBook.startingSection]),
+      history: [],
+      undoCount: 0,
     })
   },
 
@@ -107,18 +130,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
       inCombat: false,
       enemyCurrentStamina: 0,
       combatLog: [],
+      history: [],
+      undoCount: 0,
     })
   },
 
   // Navigate to a section
   goToSection: (sectionId: number) => {
-    const { visitedSections } = get()
+    const {
+      currentSection,
+      stats,
+      inventory,
+      visitedSections,
+      inCombat,
+      enemyCurrentStamina,
+      combatLog,
+      history
+    } = get()
+
+    // Save current state to history before navigating
+    const snapshot: GameStateSnapshot = {
+      currentSection,
+      stats: stats ? { ...stats } : null,
+      inventory: [...inventory],
+      visitedSections: new Set(visitedSections),
+      inCombat,
+      enemyCurrentStamina,
+      combatLog: [...combatLog],
+    }
+
     const newVisited = new Set(visitedSections)
     newVisited.add(sectionId)
 
     set({
       currentSection: sectionId,
       visitedSections: newVisited,
+      history: [...history, snapshot],
     })
   },
 
@@ -220,9 +267,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return { success, newLuck }
   },
 
+  // Undo last action
+  undo: () => {
+    const { history, undoCount } = get()
+
+    if (history.length === 0) {
+      return false // No history to undo
+    }
+
+    // Pop the last state from history
+    const previousState = history[history.length - 1]
+    const newHistory = history.slice(0, -1)
+
+    // Restore the previous state
+    set({
+      currentSection: previousState.currentSection,
+      stats: previousState.stats ? { ...previousState.stats } : null,
+      inventory: [...previousState.inventory],
+      visitedSections: new Set(previousState.visitedSections),
+      inCombat: previousState.inCombat,
+      enemyCurrentStamina: previousState.enemyCurrentStamina,
+      combatLog: [...previousState.combatLog],
+      history: newHistory,
+      undoCount: undoCount + 1,
+    })
+
+    return true // Undo successful
+  },
+
   // Save game
   saveGame: () => {
-    const { currentBook, currentSection, stats, inventory, visitedSections } = get()
+    const { currentBook, currentSection, stats, inventory, visitedSections, undoCount } = get()
     if (!currentBook || !stats) return
 
     const saveData = {
@@ -234,6 +309,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       stats,
       inventory,
       visitedSections: Array.from(visitedSections),
+      undoCount,
     }
 
     const saves = JSON.parse(localStorage.getItem('ff_saves') || '[]')
@@ -252,6 +328,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       stats: save.stats,
       inventory: save.inventory,
       visitedSections: new Set(save.visitedSections),
+      undoCount: save.undoCount || 0,
       isGameStarted: true,
     })
   },
