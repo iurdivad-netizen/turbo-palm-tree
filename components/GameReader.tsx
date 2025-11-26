@@ -21,6 +21,9 @@ export default function GameReader() {
     inCombat,
     resetGame,
     saveGame,
+    undo,
+    history,
+    undoCount,
   } = useGameStore()
 
   if (!currentBook || !stats) return null
@@ -87,6 +90,14 @@ export default function GameReader() {
               Save Game
             </button>
             <button
+              onClick={undo}
+              disabled={history.length === 0}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              title={history.length === 0 ? "No history to undo" : "Undo last action"}
+            >
+              Undo
+            </button>
+            <button
               onClick={resetGame}
               className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm transition-colors"
             >
@@ -133,6 +144,21 @@ export default function GameReader() {
                     {section.endingType === 'defeat' && '💀 The End'}
                     {section.endingType === 'neutral' && 'The End'}
                   </p>
+                  {section.endingType === 'victory' && (
+                    <div className="mt-4 text-center">
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Final Stats
+                      </p>
+                      <div className="mt-2 space-y-1 text-sm">
+                        <p>SKILL: {stats.skill} | STAMINA: {stats.stamina} | LUCK: {stats.luck}</p>
+                        {undoCount > 0 && (
+                          <p className="text-amber-700 dark:text-amber-400">
+                            Undo Penalty: -{undoCount} points
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
