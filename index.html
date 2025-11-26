@@ -419,7 +419,9 @@
             loadBook(book) {
                 this.currentBook = book;
                 this.isGameStarted = false;
-                this.currentSection = book.startingSection;
+                // Check if section 0 exists (intro), if so show it first
+                const hasIntro = book.sections.some(s => s.id === 0);
+                this.currentSection = hasIntro ? 0 : book.startingSection;
                 this.stats = null;
                 this.inventory = [];
                 this.visitedSections = new Set();
@@ -630,13 +632,30 @@
         function renderSection(section) {
             let html = `<div class="card">`;
 
+            // Section 0 is special - it's the intro
+            const isIntro = section.id === 0;
+
             html += `
                 <div class="flex flex-between mb-2">
-                    <h3 style="font-size: 1.5rem; font-weight: bold; color: #78350f;">Section ${section.id}</h3>
+                    <h3 style="font-size: 1.5rem; font-weight: bold; color: #78350f;">${isIntro ? 'Introduction' : `Section ${section.id}`}</h3>
                     ${section.title ? `<span style="font-size: 1.125rem; color: #6b7280;">${section.title}</span>` : ''}
                 </div>
                 <div class="section-text">${section.text}</div>
             `;
+
+            // If this is section 0 (intro), show "Start Adventure" button
+            if (isIntro) {
+                html += `
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 0.5rem; border: 2px solid #d97706;">
+                        <h4 style="font-weight: bold; margin-bottom: 0.5rem; color: #78350f;">Ready to begin your adventure?</h4>
+                        <button class="button button-primary" onclick="GameState.startGame()" style="font-size: 1.125rem; padding: 0.75rem 1.5rem;">
+                            ⚔️ Start Adventure
+                        </button>
+                    </div>
+                `;
+                html += `</div>`;
+                return html;
+            }
 
             if (section.isEnding) {
                 const endingClass = section.endingType === 'victory' ? 'ending-victory' :

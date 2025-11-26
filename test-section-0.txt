@@ -7,9 +7,14 @@ Initial LUCK: 9
 
 Section 0: Introduction
 
-This is the introduction to the adventure. This section contains background
-information, rules, and setting details. The game should NOT start here.
-This is section 0, which should be treated as an intro only.
+Welcome to this adventure! This is the introduction section that contains
+background information, rules, and setting details.
+
+When you load this adventure, you'll see this section first with a
+"Start Adventure" button. Clicking that button will take you to Section 1,
+where the actual adventure begins. This follows the Fighting Fantasy
+convention where section 0 is for introduction and section 1 is the
+actual start of the game.
 
 Section 1: The Adventure Begins
 
