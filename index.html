@@ -1087,10 +1087,14 @@
 
                 let sectionText = text.substring(current.headerEnd, endPos).trim();
 
-                // Parse section title (optional line after section number)
+                // Parse section title (optional SHORT line after section number)
                 let sectionTitle = '';
                 const titleLineMatch = sectionText.match(/^([^\n]+)\n/);
-                if (titleLineMatch && titleLineMatch[1].length < 80 && !titleLineMatch[1].match(/turn to|go to|if you|you are/i)) {
+                // Only treat as title if: short (<50 chars), doesn't start with common narrative words
+                if (titleLineMatch &&
+                    titleLineMatch[1].length < 50 &&
+                    titleLineMatch[1].length > 0 &&
+                    !titleLineMatch[1].match(/^(If you|You |Turn to|Go to|The |This |Your |A )/i)) {
                     sectionTitle = titleLineMatch[1].trim();
                     sectionText = sectionText.substring(titleLineMatch[0].length).trim();
                 }
@@ -1126,20 +1130,30 @@
                         if (!seenTargets.has(targetSection)) {
                             seenTargets.add(targetSection);
 
-                            // Extract choice text (sentence containing the reference)
-                            const sentenceStart = Math.max(0, m.index - 100);
-                            const sentenceEnd = Math.min(sectionText.length, m.index + m[0].length + 50);
-                            let choiceText = sectionText.substring(sentenceStart, sentenceEnd);
+                            // Extract choice text - get the line containing this choice
+                            const lines = sectionText.split('\n');
+                            let choiceText = '';
 
-                            // Clean up choice text
-                            const sentenceMatch = choiceText.match(/[.!?]\s*([^.!?]+)/);
-                            if (sentenceMatch) {
-                                choiceText = sentenceMatch[1].trim();
+                            // Find which line contains this match
+                            let charCount = 0;
+                            for (const line of lines) {
+                                if (charCount <= m.index && m.index < charCount + line.length) {
+                                    choiceText = line.trim();
+                                    break;
+                                }
+                                charCount += line.length + 1; // +1 for newline
                             }
-                            choiceText = choiceText.replace(/^\W+|\W+$/g, '').trim();
 
-                            if (!choiceText || choiceText.length > 200) {
-                                choiceText = `Go to section ${targetSection}`;
+                            // Clean up: remove "If you" prefix, trailing periods/commas
+                            choiceText = choiceText
+                                .replace(/^If\s+you\s+/i, '')
+                                .replace(/^To\s+/i, '')
+                                .replace(/[,.]$/, '')
+                                .trim();
+
+                            // If choice text is too long or empty, use a simple default
+                            if (!choiceText || choiceText.length > 150) {
+                                choiceText = `Go to ${targetSection}`;
                             }
 
                             section.choices.push({
@@ -1153,7 +1167,7 @@
                 // Extract main narrative text (remove combat info and choice markers)
                 let narrativeText = sectionText
                     .replace(/(?:SKILL|Skill)\s+\d+(?:,|\s+)(?:STAMINA|Stamina)\s+\d+/gi, '')
-                    .replace(/(?:turn|go|proceed)\s+to\s+(?:section\s+)?\d+/gi, '')
+                    .replace(/(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?\d+/gi, '')
                     .trim();
 
                 // Check for endings
