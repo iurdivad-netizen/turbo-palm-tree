@@ -7,8 +7,19 @@ Initial LUCK: 9
 
 0.
 Introduction
-This is the introduction section. It contains background information
-and rules about the adventure. The actual game starts in section 1.
+
+Welcome adventurer! This is the introduction to your quest.
+
+BACKGROUND:
+You are a brave warrior seeking fortune and glory. This adventure
+will test your skills, courage, and luck.
+
+HOW TO PLAY:
+When you load this adventure, you'll see this introduction first.
+Click the "Start Adventure" button to begin your quest at section 1.
+Throughout the adventure, make choices to determine your fate.
+
+Good luck on your journey!
 
 1.
 The Adventure Begins

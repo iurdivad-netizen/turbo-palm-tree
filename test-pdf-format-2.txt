@@ -6,9 +6,22 @@ Initial STAMINA: 18
 Initial LUCK: 8
 
 [0]
-Introduction - Read this first
-Welcome to this adventure! This section explains the rules and background.
-The adventure itself begins at section [1].
+Introduction - Read This First!
+
+WELCOME TO YOUR ADVENTURE
+
+This is section 0, the introduction. When you import this adventure,
+you'll see this section first along with a "Start Adventure" button.
+
+THE STORY:
+You are a wanderer who has stumbled upon an ancient forest. Legends
+speak of treasure hidden deep within, but also of great dangers.
+
+YOUR QUEST:
+Find the treasure and escape with your life! Your choices will
+determine whether you achieve glory or meet a terrible fate.
+
+Click "Start Adventure" when you're ready to begin at section 1!
 
 [1]
 The Forest Path

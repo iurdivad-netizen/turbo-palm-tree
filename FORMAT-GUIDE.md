@@ -343,9 +343,14 @@ PDF files are automatically converted to text and then parsed using the text for
 ### Structure Tips
 
 - **Section numbering convention:**
-  - **Section 0** is treated as an **intro** (background, rules, etc.) and is not used as the starting section
-  - **Section 1** is where the **adventure actually starts** - this is always the default starting point
-  - The parser will automatically skip section 0 and start from section 1
+  - **Section 0** is treated as an **introduction** (background, rules, etc.)
+    - When a book has section 0, it will be displayed first
+    - Players see a "Start Adventure" button to begin the actual game
+    - Section 0 is for reading only - no choices or combat
+  - **Section 1** is where the **adventure actually starts**
+    - This is always the default starting section for gameplay
+    - Clicking "Start Adventure" from section 0 takes you to section 1
+  - The parser automatically sets section 1 as the starting section (skips section 0)
 - Start with an engaging opening (Section 1)
 - Create multiple paths through your adventure
 - Include at least one ending section
