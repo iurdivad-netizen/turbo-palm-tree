@@ -44,6 +44,46 @@ An interactive web application for playing Fighting Fantasy-style gamebook adven
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+## 📚 Adventure Formatter Tool
+
+**NEW!** We now provide a comprehensive tool to help you format and validate your adventures before uploading them to the app.
+
+### Web-Based Formatter (Easiest)
+
+Open `formatter.html` in your browser for a visual, user-friendly interface:
+- ✅ Paste or upload your adventure text
+- ✅ Instant validation with detailed feedback
+- ✅ Convert plain text to JSON format
+- ✅ Preview sections and statistics
+- ✅ Download formatted adventures
+
+### Command Line Tool
+
+For advanced users and automation:
+
+```bash
+# Validate an adventure
+node formatAdventure.js validate my-adventure.txt
+
+# Convert text to JSON
+node formatAdventure.js convert my-adventure.txt output.json
+
+# Check for common issues
+node formatAdventure.js check my-adventure.txt
+```
+
+### Documentation
+
+- **[FORMATTER_README.md](./FORMATTER_README.md)** - Quick start guide
+- **[ADVENTURE_FORMAT_GUIDE.md](./ADVENTURE_FORMAT_GUIDE.md)** - Complete formatting guide with examples
+
+The formatter helps you:
+- Validate your adventure structure
+- Detect broken links and missing sections
+- Convert between text and JSON formats
+- Identify potential issues before testing
+- Ensure compatibility with the app
+
 ## Creating Your Own Adventures
 
 Adventures are defined in JSON format. Here's the structure:
