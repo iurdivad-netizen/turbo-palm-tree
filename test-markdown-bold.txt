@@ -1,0 +1,90 @@
+Title: Test Adventure with Markdown Bold Numbers
+Author: Test Author
+Description: Testing Markdown bold format for section numbers (**0**, **1**, etc.)
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+**0**
+Introduction
+
+Welcome brave adventurer! This is the introduction to your quest.
+
+**ABOUT THIS ADVENTURE:**
+This adventure uses Markdown bold formatting for section numbers.
+When you see **0**, **1**, **2**, etc., these are section numbers
+formatted with double asterisks (which creates bold text in Markdown).
+
+**THE STORY:**
+You are a hero seeking the legendary Crystal of Power. It lies deep
+within the Caverns of Doom, guarded by fearsome creatures and deadly
+traps. Your courage, skill, and luck will determine your fate.
+
+**HOW TO PLAY:**
+You'll see a "Start Adventure" button below. Click it to begin your
+quest at section **1**. Throughout your journey, make choices that
+will lead you to victory or defeat.
+
+May fortune favor you on your adventure!
+
+**1**
+The Cavern Entrance
+
+You stand before the mouth of a dark cavern. Ancient runes are carved
+into the stone archway above the entrance. The air is cold and carries
+a faint smell of sulfur.
+
+A weathered sign reads: "Enter at your own peril. Many have entered,
+few have returned."
+
+If you want to enter the cavern, turn to **2**.
+If you want to search for another entrance, go to **3**.
+
+**2**
+Into the Darkness
+
+You step through the entrance and descend into the cavern. The passage
+slopes downward, lit by glowing fungi on the walls. You hear water
+dripping in the distance.
+
+Suddenly, you see two paths ahead.
+
+To take the left path, turn to **4**.
+To take the right path, turn to **5**.
+
+**3**
+The Hidden Path
+
+You search around the cavern entrance and discover a hidden path behind
+some bushes. This route looks safer and better lit.
+
+Following this path, you discover the Crystal of Power resting on a
+pedestal! There are no guards or traps here.
+
+You have won! Congratulations on finding the secret route!
+
+**4**
+The Underground Lake
+
+The left path leads to an underground lake. The water is crystal clear
+and surprisingly warm. You notice glowing crystals at the bottom.
+
+You reach into the water and retrieve a beautiful crystal. It's the
+Crystal of Power! But it was a trap - the crystal was fake, and you're
+now stuck in quicksand that appeared beneath your feet.
+
+You have died. Game over.
+
+**5**
+The Guardian's Chamber
+
+The right path opens into a vast chamber. In the center, on a golden
+pedestal, sits the Crystal of Power! But between you and the crystal
+stands a massive stone guardian that comes to life as you enter.
+
+The guardian speaks: "Answer my riddle, or face your doom!"
+
+Fortunately, you know the answer to the ancient riddle. The guardian
+steps aside, and you claim the Crystal of Power.
+
+You have won! Victory is yours, brave adventurer!
