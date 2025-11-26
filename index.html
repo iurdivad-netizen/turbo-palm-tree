@@ -961,8 +961,31 @@
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + '\n';
+
+                // Improved text extraction that preserves line breaks
+                let pageText = '';
+                let lastY = null;
+
+                for (let j = 0; j < textContent.items.length; j++) {
+                    const item = textContent.items[j];
+                    const text = item.str;
+
+                    // Get Y coordinate from transform matrix
+                    const currentY = item.transform[5];
+
+                    // Add newline if we're on a different line (Y coordinate changed significantly)
+                    if (lastY !== null && Math.abs(currentY - lastY) > 5) {
+                        pageText += '\n';
+                    } else if (pageText.length > 0 && !pageText.endsWith(' ') && !pageText.endsWith('\n')) {
+                        // Add space between items on the same line
+                        pageText += ' ';
+                    }
+
+                    pageText += text;
+                    lastY = currentY;
+                }
+
+                fullText += pageText + '\n\n';
             }
 
             // Try to parse as JSON first (in case PDF contains JSON data)
@@ -1017,13 +1040,19 @@
 
             // Parse sections
             const sections = [];
-            const sectionRegex = /(?:Section|SECTION|\[)\s*(\d+)\s*(?:\]|:|\.|–|—)/gi;
+            // Enhanced regex to handle PDF text variations:
+            // - "Section 1:" or "SECTION 1:"
+            // - "[1]" or "(1)"
+            // - "1." or "1:" at start of line (common in PDF Fighting Fantasy books)
+            const sectionRegex = /(?:(?:Section|SECTION)\s*(\d+)\s*(?:\]|:|\.|–|—)|\[(\d+)\]|\((\d+)\)|^(\d+)[\.:]\s)/gim;
             const matches = [];
             let match;
 
             while ((match = sectionRegex.exec(text)) !== null) {
+                // Find which capture group matched (we have 4 possible patterns)
+                const sectionId = parseInt(match[1] || match[2] || match[3] || match[4]);
                 matches.push({
-                    id: parseInt(match[1]),
+                    id: sectionId,
                     start: match.index,
                     headerEnd: match.index + match[0].length
                 });

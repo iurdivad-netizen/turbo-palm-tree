@@ -1,0 +1,29 @@
+Title: Test Fighting Fantasy Adventure (PDF Format 2)
+Author: Test Author
+Description: Simulating PDF with bracketed sections like [1]
+Initial SKILL: 7
+Initial STAMINA: 18
+Initial LUCK: 8
+
+[0]
+Introduction - Read this first
+Welcome to this adventure! This section explains the rules and background.
+The adventure itself begins at section [1].
+
+[1]
+The Forest Path
+You find yourself on a narrow forest path. The trees are thick and dark.
+A fork in the path lies ahead.
+
+To take the left path, turn to [2].
+To take the right path, turn to [3].
+
+[2]
+Victory Path
+You find a magical sword and complete your quest!
+You have won! The adventure is complete.
+
+[3]
+Dangerous Path
+You encounter a deadly trap and cannot escape.
+You have died. Game over.
