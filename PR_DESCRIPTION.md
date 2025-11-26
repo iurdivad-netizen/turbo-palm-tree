@@ -151,6 +151,52 @@ This is the **single most important format** for real-world use. Most users impo
 - ✅ All 6 format types work perfectly
 - ✅ Real gamebook imports work without errors
 
+## Part 6: Text and Choice Display Fixes
+
+### Problem
+After loading, adventures weren't displaying correctly:
+- Section text wasn't showing completely
+- Choices weren't appearing or had messy text
+- Titles were incorrectly extracted (narrative text treated as titles)
+- Choice text was unclear or malformed
+
+### Root Causes
+1. **Title extraction too loose**: Any line <80 chars was treated as a title, causing narrative text to be misidentified
+2. **Choice text extraction poor**: Complex sentence-parsing logic produced messy, unclear choice text
+3. **Incomplete narrative cleaning**: Only removed "turn", "go", "proceed" but choiceRegex matched more keywords
+
+### Solution
+**1. Stricter Title Extraction:**
+- Only treat lines <50 chars as titles (down from 80)
+- Exclude lines starting with narrative words: "If you", "You", "The", "This", "Your", "A"
+- Result: Only actual short titles are extracted, not narrative text
+
+**2. Improved Choice Text Extraction:**
+- Extract the full line containing the choice reference
+- Clean up by removing "If you" and "To" prefixes
+- Remove trailing punctuation
+- Example: "If you take the left path, turn to 2" → "take the left path, turn to 2"
+- Result: Clear, contextual choice text
+
+**3. Better Narrative Cleaning:**
+- Updated regex to remove ALL choice keywords: turn, go, proceed, move, continue, head, return
+- Matches the same keywords as choiceRegex
+- Result: Choice markers properly removed from narrative
+
+### Technical Changes (Text/Choice Display)
+- `index.html` (lines 1090-1100): Stricter title extraction with 50-char limit and narrative word exclusion
+- `index.html` (lines 1133-1157): Improved choice text extraction using line-based approach
+- `index.html` (line 1170): Updated narrative cleaning to match all choice keywords
+- Created `test-extraction.js`: Comprehensive section extraction test
+- Created `test-extraction-sec0.js`: Test with "Section X:" format
+
+### Impact
+- ✅ **Section text displays completely**
+- ✅ **Choices display with clear, contextual text**
+- ✅ **Titles extract correctly** without false positives
+- ✅ **Adventures are now fully playable** after import
+- ✅ All content renders properly in the UI
+
 ## Files Changed
 
 ### Core Functionality
@@ -167,6 +213,8 @@ This is the **single most important format** for real-world use. Most users impo
 - `test-all-formats.js` - Comprehensive test suite for all formats
 - `test-parse-full.js` - Detailed parser testing script
 - `test-regex.js` - Regex pattern testing script
+- `test-extraction.js` - Section extraction and choice text testing
+- `test-extraction-sec0.js` - Extraction testing with "Section X:" format
 
 ## Testing
 
@@ -218,13 +266,19 @@ This is the **single most important format** for real-world use. Most users impo
   - `f9fbc7b` - Update PR description (standalone numbers)
   - `0a9939c` - Add regex test script for debugging
   - `f5368e7` - **CRITICAL FIX: Eliminate false positives** ⭐
+  - `be272c0` - Update PR description (Part 5)
+  - `7a85c40` - **Fix section text and choice display issues** ⭐
 
 ## Summary of Fixes
 
-### Critical Fix ⭐
-- **Fixed false positive detection** that was preventing adventures from loading
-- All section number patterns now require start-of-line to avoid matching regular text
-- Adventures with standalone numbers now load correctly
+### Critical Fixes ⭐
+1. **Fixed false positive detection** - prevented adventures from loading
+   - All section number patterns now require start-of-line
+   - No more duplicate sections from choice text
+2. **Fixed text and choice display** - adventures now fully playable
+   - Stricter title extraction prevents narrative text misidentification
+   - Improved choice text extraction for clear, contextual choices
+   - Complete section text displays properly
 
 ### Major Features
 - **Standalone number support** - works with real gamebook imports (most common format)
@@ -233,8 +287,10 @@ This is the **single most important format** for real-world use. Most users impo
 - **Markdown bold support** - works with Markdown-authored adventures
 
 ### Impact
-- ✅ Real Fighting Fantasy book imports now work
+- ✅ **Adventures load and are fully playable**
+- ✅ Real Fighting Fantasy book imports work
 - ✅ PDF exports from original books work
 - ✅ OCR scanned gamebooks work
 - ✅ No formatting changes needed for imports
 - ✅ All 6 format types work perfectly together
+- ✅ Text and choices display correctly
