@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fighting Fantasy - Interactive Gamebook</title>
+    <!-- PDF.js library for PDF parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
     <style>
         * {
             margin: 0;
@@ -538,10 +546,11 @@
                         <h2 class="card-title text-center">Load Adventure Book</h2>
 
                         <div class="upload-area" id="upload-area">
-                            <input type="file" id="file-input" accept=".json">
+                            <input type="file" id="file-input" accept=".json,.txt,.md,.pdf">
                             <label for="file-input" style="cursor: pointer;">
                                 <div style="font-size: 4rem; margin-bottom: 1rem;">📁</div>
-                                <div style="font-size: 1.125rem; margin-bottom: 0.5rem;">Drop your adventure JSON file here</div>
+                                <div style="font-size: 1.125rem; margin-bottom: 0.5rem;">Drop your adventure file here</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Supports JSON, TXT, Markdown, and PDF formats</div>
                                 <div style="font-size: 0.875rem; color: #6b7280;">or click to browse</div>
                             </label>
                         </div>
@@ -874,26 +883,274 @@
             }
         }
 
-        function handleFile(file) {
-            if (!file.name.endsWith('.json')) {
-                showError('Please upload a JSON file');
-                return;
+        async function handleFile(file) {
+            const fileName = file.name.toLowerCase();
+
+            try {
+                if (fileName.endsWith('.json')) {
+                    await handleJSONFile(file);
+                } else if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+                    await handleTextFile(file);
+                } else if (fileName.endsWith('.pdf')) {
+                    await handlePDFFile(file);
+                } else {
+                    showError('Unsupported file format. Please upload JSON, TXT, MD, or PDF files.');
+                }
+            } catch (err) {
+                showError('Error loading file: ' + err.message);
+            }
+        }
+
+        function handleJSONFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (validateBook(data)) {
+                            GameState.loadBook(data);
+                            resolve();
+                        } else {
+                            showError('Invalid book format. Please check the JSON structure.');
+                            reject(new Error('Invalid format'));
+                        }
+                    } catch (err) {
+                        showError('Error parsing JSON file: ' + err.message);
+                        reject(err);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        function handleTextFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const text = e.target.result;
+                        const book = parseTextAdventure(text);
+                        if (validateBook(book)) {
+                            GameState.loadBook(book);
+                            resolve();
+                        } else {
+                            showError('Could not parse adventure from text file. Please check the format.');
+                            reject(new Error('Invalid format'));
+                        }
+                    } catch (err) {
+                        showError('Error parsing text file: ' + err.message);
+                        reject(err);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        async function handlePDFFile(file) {
+            if (typeof pdfjsLib === 'undefined') {
+                showError('PDF.js library not loaded. Cannot parse PDF files.');
+                throw new Error('PDF.js not available');
             }
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (validateBook(data)) {
-                        GameState.loadBook(data);
-                    } else {
-                        showError('Invalid book format. Please check the JSON structure.');
-                    }
-                } catch (err) {
-                    showError('Error parsing JSON file: ' + err.message);
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n';
+            }
+
+            // Try to parse as JSON first (in case PDF contains JSON data)
+            try {
+                const data = JSON.parse(fullText);
+                if (validateBook(data)) {
+                    GameState.loadBook(data);
+                    return;
                 }
+            } catch (e) {
+                // Not JSON, try text parsing
+            }
+
+            // Parse as text adventure
+            const book = parseTextAdventure(fullText);
+            if (validateBook(book)) {
+                GameState.loadBook(book);
+            } else {
+                showError('Could not parse adventure from PDF. Please ensure it follows the text format.');
+                throw new Error('Invalid format');
+            }
+        }
+
+        function parseTextAdventure(text) {
+            // Parse text-based adventure format
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+            // Extract metadata
+            let title = 'Untitled Adventure';
+            let author = '';
+            let description = '';
+            let skill = 8, stamina = 20, luck = 9;
+
+            // Look for metadata at the start
+            const titleMatch = text.match(/(?:Title|TITLE|Adventure):\s*(.+)/i);
+            if (titleMatch) title = titleMatch[1].trim();
+
+            const authorMatch = text.match(/(?:Author|By):\s*(.+)/i);
+            if (authorMatch) author = authorMatch[1].trim();
+
+            const descMatch = text.match(/(?:Description|Summary):\s*(.+)/i);
+            if (descMatch) description = descMatch[1].trim();
+
+            const skillMatch = text.match(/(?:Initial\s+)?SKILL:\s*(\d+)/i);
+            if (skillMatch) skill = parseInt(skillMatch[1]);
+
+            const staminaMatch = text.match(/(?:Initial\s+)?STAMINA:\s*(\d+)/i);
+            if (staminaMatch) stamina = parseInt(staminaMatch[1]);
+
+            const luckMatch = text.match(/(?:Initial\s+)?LUCK:\s*(\d+)/i);
+            if (luckMatch) luck = parseInt(luckMatch[1]);
+
+            // Parse sections
+            const sections = [];
+            const sectionRegex = /(?:Section|SECTION|\[)\s*(\d+)\s*(?:\]|:|\.|–|—)/gi;
+            const matches = [];
+            let match;
+
+            while ((match = sectionRegex.exec(text)) !== null) {
+                matches.push({
+                    id: parseInt(match[1]),
+                    start: match.index,
+                    headerEnd: match.index + match[0].length
+                });
+            }
+
+            // Extract section content
+            for (let i = 0; i < matches.length; i++) {
+                const current = matches[i];
+                const next = matches[i + 1];
+                const endPos = next ? next.start : text.length;
+
+                let sectionText = text.substring(current.headerEnd, endPos).trim();
+
+                // Parse section title (optional line after section number)
+                let sectionTitle = '';
+                const titleLineMatch = sectionText.match(/^([^\n]+)\n/);
+                if (titleLineMatch && titleLineMatch[1].length < 80 && !titleLineMatch[1].match(/turn to|go to|if you|you are/i)) {
+                    sectionTitle = titleLineMatch[1].trim();
+                    sectionText = sectionText.substring(titleLineMatch[0].length).trim();
+                }
+
+                const section = {
+                    id: current.id,
+                    title: sectionTitle,
+                    text: '',
+                    choices: []
+                };
+
+                // Extract combat encounters
+                const combatMatch = sectionText.match(/(?:SKILL|Skill)\s+(\d+)(?:,|\s+)(?:STAMINA|Stamina)\s+(\d+)/i);
+                if (combatMatch) {
+                    const enemyNameMatch = sectionText.match(/(?:fight|battle|encounter|combat|face)(?:\s+the|\s+a|\s+an)?\s+([A-Z\s]+?)(?=\s+SKILL|\s+Skill|\.|,)/i);
+                    section.combat = {
+                        enemyName: enemyNameMatch ? enemyNameMatch[1].trim() : 'Enemy',
+                        enemySkill: parseInt(combatMatch[1]),
+                        enemyStamina: parseInt(combatMatch[2]),
+                        onVictorySection: current.id + 1,
+                        onDefeatSection: 999
+                    };
+                }
+
+                // Extract choices - look for "turn to", "go to", "proceed to" followed by section numbers
+                const choiceRegex = /(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)/gi;
+                const choiceMatches = [...sectionText.matchAll(choiceRegex)];
+
+                if (choiceMatches.length > 0) {
+                    const seenTargets = new Set();
+                    choiceMatches.forEach((m, idx) => {
+                        const targetSection = parseInt(m[1]);
+                        if (!seenTargets.has(targetSection)) {
+                            seenTargets.add(targetSection);
+
+                            // Extract choice text (sentence containing the reference)
+                            const sentenceStart = Math.max(0, m.index - 100);
+                            const sentenceEnd = Math.min(sectionText.length, m.index + m[0].length + 50);
+                            let choiceText = sectionText.substring(sentenceStart, sentenceEnd);
+
+                            // Clean up choice text
+                            const sentenceMatch = choiceText.match(/[.!?]\s*([^.!?]+)/);
+                            if (sentenceMatch) {
+                                choiceText = sentenceMatch[1].trim();
+                            }
+                            choiceText = choiceText.replace(/^\W+|\W+$/g, '').trim();
+
+                            if (!choiceText || choiceText.length > 200) {
+                                choiceText = `Go to section ${targetSection}`;
+                            }
+
+                            section.choices.push({
+                                text: choiceText,
+                                targetSection: targetSection
+                            });
+                        }
+                    });
+                }
+
+                // Extract main narrative text (remove combat info and choice markers)
+                let narrativeText = sectionText
+                    .replace(/(?:SKILL|Skill)\s+\d+(?:,|\s+)(?:STAMINA|Stamina)\s+\d+/gi, '')
+                    .replace(/(?:turn|go|proceed)\s+to\s+(?:section\s+)?\d+/gi, '')
+                    .trim();
+
+                // Check for endings
+                const endingMatch = narrativeText.match(/(?:you have won|victory|you have succeeded|the end|you have died|you are dead|game over)/i);
+                if (endingMatch || current.id === 999 || current.id === 400) {
+                    section.isEnding = true;
+                    section.endingType = narrativeText.match(/(?:you have won|victory|succeeded)/i) ? 'victory' :
+                                        narrativeText.match(/(?:died|dead|game over)/i) ? 'defeat' : 'neutral';
+                }
+
+                section.text = narrativeText;
+
+                // If no choices and not an ending, link to next section
+                if (section.choices.length === 0 && !section.isEnding && !section.combat) {
+                    if (i < matches.length - 1) {
+                        section.choices.push({
+                            text: 'Continue',
+                            targetSection: matches[i + 1].id
+                        });
+                    }
+                }
+
+                sections.push(section);
+            }
+
+            // If no sections found, create a simple single-section adventure
+            if (sections.length === 0) {
+                sections.push({
+                    id: 1,
+                    title: 'Start',
+                    text: text.substring(0, 1000),
+                    choices: [],
+                    isEnding: true,
+                    endingType: 'neutral'
+                });
+            }
+
+            return {
+                id: title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                title: title,
+                author: author,
+                description: description,
+                startingSection: sections[0]?.id || 1,
+                initialStats: { skill, stamina, luck },
+                startingItems: [],
+                sections: sections
             };
-            reader.readAsText(file);
         }
 
         function validateBook(book) {

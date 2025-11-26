@@ -6,7 +6,8 @@ A complete standalone HTML version of the Fighting Fantasy web app. No installat
 
 1. Download or clone this repository
 2. Open `index.html` in any modern web browser
-3. Click "Load Example Adventure" to try the demo, or upload your own adventure JSON file
+3. Click "Load Example Adventure" to try the demo, or upload your own adventure file
+4. **Supported formats:** JSON, TXT, Markdown (MD), and PDF
 
 That's it! No npm, no Node.js, no dependencies required.
 
@@ -14,6 +15,8 @@ That's it! No npm, no Node.js, no dependencies required.
 
 - **Fully Standalone**: Single HTML file with all CSS and JavaScript embedded
 - **No Build Process**: Works directly in any modern browser
+- **Multiple Format Support**: Upload JSON, TXT, Markdown, or PDF adventure files
+- **Smart Parser**: Automatically converts text-based adventures to game format
 - **Complete Gameplay**:
   - Character stats tracking (SKILL, STAMINA, LUCK)
   - Dice-based combat system
@@ -27,14 +30,17 @@ That's it! No npm, no Node.js, no dependencies required.
 ## 📁 Files
 
 - `index.html` - The complete app (open this in your browser)
-- `example-adventure.json` - Demo adventure "The Cavern of Fear"
+- `example-adventure.json` - Demo adventure "The Cavern of Fear" (JSON format)
+- `example-adventure.txt` - Demo adventure "The Forest of Destiny" (text format)
+- `FORMAT-GUIDE.md` - Complete guide for creating adventures in all formats
 
 ## 🎮 How to Play
 
 1. **Load an Adventure**:
-   - Click "Load Example Adventure" for the demo
-   - Or drag and drop your own JSON adventure file
-   - Or click to browse for a JSON file
+   - Click "Load Example Adventure" for the demo (JSON format)
+   - Or drag and drop your adventure file (JSON, TXT, MD, or PDF)
+   - Or click to browse for a file
+   - The app automatically detects the format and parses it
 
 2. **Start Your Quest**:
    - Review your starting stats
@@ -52,9 +58,54 @@ That's it! No npm, no Node.js, no dependencies required.
 
 ## 📝 Creating Custom Adventures
 
-Adventures are defined in JSON format. Place your JSON file in the same directory as `index.html`.
+Adventures can be created in **four different formats**: JSON, TXT, Markdown, or PDF.
 
-### Book Structure
+### Quick Start - Text Format (Easiest!)
+
+Create a simple text file:
+
+```
+Title: My Adventure
+Author: Your Name
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+Section 1: The Beginning
+
+Your adventure starts here. Write your narrative text.
+
+If you want to go left, turn to 2.
+If you want to go right, turn to 3.
+
+Section 2: Left Path
+
+You went left and found a GOBLIN! SKILL 5 STAMINA 6
+
+If you defeat it, turn to 4.
+
+Section 3: Right Path
+
+You went right. Continue your story here. Turn to 4.
+
+Section 4: The End
+
+You completed the adventure! You have won!
+```
+
+The parser automatically:
+- ✅ Detects section numbers
+- ✅ Creates choices from "turn to" references
+- ✅ Parses combat from "SKILL X STAMINA Y" patterns
+- ✅ Identifies endings
+
+**📖 See `FORMAT-GUIDE.md` for complete documentation on all formats!**
+
+### JSON Format (Advanced Control)
+
+JSON format gives you complete control over all game features.
+
+#### Book Structure
 
 ```json
 {
@@ -80,7 +131,7 @@ Adventures are defined in JSON format. Place your JSON file in the same director
 }
 ```
 
-### Section Structure
+#### Section Structure
 
 Each section can have:
 
@@ -92,7 +143,7 @@ Each section can have:
 - **Stat Changes**: `modifyStats` object for skill/stamina/luck changes
 - **Endings**: `isEnding` and `endingType` (victory/defeat/neutral)
 
-### Example Section with Combat
+#### Example Section with Combat
 
 ```json
 {
@@ -111,7 +162,7 @@ Each section can have:
 }
 ```
 
-### Example Section with Choices
+#### Example Section with Choices
 
 ```json
 {
@@ -134,7 +185,7 @@ Each section can have:
 }
 ```
 
-### Item Types
+#### Item Types
 
 - `weapon` - ⚔️ Weapons
 - `armor` - 🛡️ Armor and shields
@@ -143,7 +194,7 @@ Each section can have:
 - `key` - 🔑 Keys and access items
 - `other` - 📦 Miscellaneous items
 
-### Conditional Choices
+#### Conditional Choices
 
 Choices can require:
 - `requiresItem`: Specific item ID
@@ -196,27 +247,47 @@ The HTML file is fully self-contained. You can easily customize:
 - Game mechanics (edit the JavaScript)
 - UI layout (edit the render functions)
 
-## 📖 Example Adventure
+## 📖 Example Adventures
 
-"The Cavern of Fear" includes:
+### "The Cavern of Fear" (JSON)
 - 24 interconnected sections
 - 3 unique enemies
 - Multiple paths and choices
 - Hidden treasures and secrets
 - 3 different endings
+- Demonstrates all JSON features
+
+### "The Forest of Destiny" (TXT)
+- Text-based format example
+- Shows simple section structure
+- Combat encounters
+- Multiple paths
+- Easy to read and modify
 
 ## 🔧 Troubleshooting
 
 **"Could not load example book" error:**
-- Make sure `example-adventure.json` is in the same directory as `index.html`
-- Check that the file is valid JSON
+- Make sure example files are in the same directory as `index.html`
+- Check that JSON files have valid JSON syntax
+- For text files, ensure sections are numbered correctly
+
+**"Could not parse adventure" error:**
+- Check that your text file has clear section headers (Section 1:, Section 2:, etc.)
+- Ensure you have at least one section
+- See `FORMAT-GUIDE.md` for correct format
 
 **Choices are grayed out:**
 - You don't meet the requirements (check your stats or inventory)
 
 **Combat not working:**
 - Make sure your STAMINA is above 0
+- In text files, use exact format: "SKILL X STAMINA Y"
 - Try refreshing the page
+
+**PDF not loading:**
+- Ensure text is selectable (not scanned images)
+- PDF must contain text in a parseable format
+- Try converting to TXT format first
 
 ## 📄 License
 
@@ -228,4 +299,21 @@ Inspired by the classic Fighting Fantasy gamebooks by Steve Jackson and Ian Livi
 
 ---
 
-**Enjoy your adventure!** Create your own gamebooks and share them with friends. Just send them the `index.html` and your custom JSON file!
+**Enjoy your adventure!** Create your own gamebooks and share them with friends. Just send them the `index.html` and your custom adventure file (JSON, TXT, MD, or PDF)!
+
+## 🆕 What's New
+
+### Multi-Format Support
+- **Text Format**: Write adventures in plain text - easy and intuitive
+- **Markdown**: Use Markdown formatting for styled text
+- **PDF Support**: Upload PDF documents (automatically converted to text)
+- **Smart Parser**: Automatically detects sections, choices, combat, and endings
+- **Compatible**: All formats work with the same game engine
+
+### Easy Adventure Creation
+- No need to learn JSON - just write naturally
+- Use simple phrases like "turn to 5" to create choices
+- Combat auto-detected from "SKILL X STAMINA Y" patterns
+- Section numbers automatically linked
+
+Check out `example-adventure.txt` and `FORMAT-GUIDE.md` to get started!
