@@ -1,0 +1,30 @@
+Title: Test Adventure with Section 0
+Author: Test Author
+Description: Testing section 0 as intro and section 1 as start
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+Section 0: Introduction
+
+This is the introduction to the adventure. This section contains background
+information, rules, and setting details. The game should NOT start here.
+This is section 0, which should be treated as an intro only.
+
+Section 1: The Adventure Begins
+
+You stand at the entrance to a mysterious cave. The real adventure starts here.
+This is section 1, where the player should begin their journey.
+
+If you want to enter the cave, turn to 2.
+If you want to turn back, turn to 3.
+
+Section 2: Inside the Cave
+
+You enter the dark cave. The adventure continues...
+You have won! Congratulations!
+
+Section 3: Turning Back
+
+You decide to leave. Perhaps another day.
+Your adventure ends here. The end.
