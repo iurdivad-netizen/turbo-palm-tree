@@ -1,0 +1,29 @@
+Title: Test Fighting Fantasy Adventure (PDF Format 1)
+Author: Test Author
+Description: Simulating PDF with numbered sections like "1." at start of line
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+0.
+Introduction
+This is the introduction section. It contains background information
+and rules about the adventure. The actual game starts in section 1.
+
+1.
+The Adventure Begins
+You stand at the entrance to a mysterious dungeon. Dark corridors
+stretch before you into the unknown depths.
+
+If you want to enter the left corridor, turn to 2.
+If you want to enter the right corridor, turn to 3.
+
+2.
+The Left Corridor
+You walk down the left corridor and find a treasure chest.
+You have won! Congratulations!
+
+3.
+The Right Corridor
+You walk down the right corridor and fall into a trap.
+You have died. The end.

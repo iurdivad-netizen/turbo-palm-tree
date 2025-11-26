@@ -129,11 +129,11 @@ If not specified, defaults will be used.
 
 The parser recognizes these formats:
 
-- `Section 1:`
-- `Section 1.`
-- `SECTION 1:`
-- `[1]`
-- `1.` (at start of line)
+- `Section 1:` or `Section 1.`
+- `SECTION 1:` or `SECTION 1.`
+- `[1]` (brackets)
+- `(1)` (parentheses)
+- `1.` or `1:` (number at start of line - common in PDFs)
 
 ### Creating Choices
 
@@ -301,13 +301,21 @@ The Markdown formatting will be preserved in the game text.
 
 ## PDF Format
 
-PDF files are automatically converted to text and then parsed using the text format rules above.
+PDF files are automatically converted to text and then parsed using the text format rules above. The parser has been enhanced to handle various PDF text formats.
+
+**Supported Section Number Formats in PDFs:**
+- `Section 1:` or `SECTION 1:`
+- `[1]` (brackets)
+- `(1)` (parentheses)
+- `1.` or `1:` at the start of a line (common in Fighting Fantasy books)
 
 **Tips for PDFs:**
-- Use clear section headers (Section 1:, Section 2:, etc.)
-- Follow the same format as text adventures
-- Ensure text is selectable (not scanned images)
-- Test with a text version first
+- The parser preserves line breaks and text structure from the PDF
+- Section 0 is treated as intro/background (game starts at section 1)
+- Use clear section headers - any of the formats above will work
+- Ensure text is selectable (not scanned images or photos)
+- PDF text extraction works best with clean, well-formatted PDFs
+- Test with a text version first if you encounter issues
 
 ## Tips for Writing Adventures
 
