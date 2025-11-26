@@ -1,44 +1,29 @@
 Title: Test Adventure with Mixed Number Formats
 Author: Test Author
-Description: Testing all 6 section number formats working together
+Description: Testing all 6 section number formats in one adventure (each section uses a different format)
 Initial SKILL: 7
 Initial STAMINA: 18
 Initial LUCK: 9
 
-Section 0: Introduction (Format: "Section X:")
-
-This adventure demonstrates all 6 supported section number formats
-working together in a single adventure. The parser is smart enough
-to recognize any of these formats!
-
 0
 
-Standalone number format (most common in real imports)
+Introduction - Standalone Format
 
-[1]
+This adventure demonstrates all 6 supported section number formats
+working together in a single adventure. Each section uses a different
+format to show the parser can handle any of them!
 
-Bracketed format (common in some gamebooks)
+Formats demonstrated:
+- Section 0: Standalone number
+- Section 1: Section X: format
+- Section 2: [X] bracket format
+- Section 3: **X** Markdown bold format
+- Section 4: X. period format
+- Section 5: (X) parentheses format
 
-**2**
+Click "Start Adventure" to begin your quest!
 
-Markdown bold format (for Markdown authors)
-
-3.
-
-Number with period at start of line (PDF format)
-
-(4)
-
-Parentheses format
-
-This shows how versatile the parser is. You can mix and match formats,
-and the parser will understand them all!
-
-Click "Start Adventure" to begin your quest.
-
-1
-
-The Quest Begins
+Section 1: The Quest Begins
 
 You are standing at the entrance to the Dragon's Lair. The adventure
 awaits! Your choices will determine your fate.

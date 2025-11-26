@@ -1059,13 +1059,13 @@
 
             // Parse sections
             const sections = [];
-            // Enhanced regex to handle PDF text variations:
-            // - "Section 1:" or "SECTION 1:"
-            // - "[1]" or "(1)"
-            // - "1." or "1:" at start of line (common in PDF Fighting Fantasy books)
-            // - "**1**" (Markdown bold - common in Markdown adventure books)
-            // - Standalone number on its own line (no "section" word needed)
-            const sectionRegex = /(?:(?:Section|SECTION)\s*(\d+)\s*(?:\]|:|\.|–|—)|\[(\d+)\]|\((\d+)\)|^(\d+)[\.:]\s|\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
+            // Enhanced regex to handle PDF text variations (all must be at start of line to avoid false positives):
+            // - "Section 1:" or "SECTION 1:" (at start of line)
+            // - "[1]" or "(1)" (at start of line)
+            // - "1." or "1:" (at start of line - common in PDF Fighting Fantasy books)
+            // - "**1**" (Markdown bold at start of line)
+            // - Standalone number on its own line (no "section" word needed - most common!)
+            const sectionRegex = /(?:^(?:Section|SECTION)\s*(\d+)\s*(?:\]|:|\.|–|—)|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
             const matches = [];
             let match;
 
