@@ -197,6 +197,47 @@ After loading, adventures weren't displaying correctly:
 - ✅ **Adventures are now fully playable** after import
 - ✅ All content renders properly in the UI
 
+## Part 7: SECTION X Without Punctuation
+
+### Problem
+Real gamebook imports using "SECTION 1" (without colon or period) weren't recognized:
+```
+SECTION 1
+
+You stand at the entrance...
+```
+The parser expected "SECTION 1:" or "SECTION 1." with punctuation, missing formats like the example above.
+
+### Root Cause
+The regex required punctuation after the section number:
+```javascript
+^(?:Section|SECTION)\s*(\d+)\s*(?:\]|:|\.|–|—)
+                                  ^^^^^^^^^^^^ REQUIRED punctuation
+```
+
+### Solution
+Made punctuation optional:
+1. Changed `\s*` to `\s+` after Section keyword (require at least one space)
+2. Made punctuation optional with `?`: `(?:\]|:|\.|–|—)?`
+3. New pattern: `^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?`
+
+Now matches both:
+- "SECTION 1" (no punctuation)
+- "SECTION 1:" (with punctuation)
+
+### Technical Changes (SECTION X Pattern)
+- `index.html` (line 1068): Updated first regex pattern to make punctuation optional
+- Created `test-real-import.txt`: Real Fighting Fantasy format with non-sequential sections (1, 45, 127, 234, etc.)
+- Created `test-real-import.js`: Verification script for real import format
+- All 12 sections correctly identified including non-sequential numbers
+
+### Impact
+- ✅ **Real gamebook imports now work** (SECTION X format)
+- ✅ **Non-sequential section numbers supported** (45, 127, 234, etc.)
+- ✅ **Both formats work**: "SECTION X" and "SECTION X:"
+- ✅ All 6 previous formats still work correctly
+- ✅ Fighting Fantasy and similar gamebooks import without modification
+
 ## Files Changed
 
 ### Core Functionality
@@ -215,6 +256,8 @@ After loading, adventures weren't displaying correctly:
 - `test-regex.js` - Regex pattern testing script
 - `test-extraction.js` - Section extraction and choice text testing
 - `test-extraction-sec0.js` - Extraction testing with "Section X:" format
+- `test-real-import.txt` - Real Fighting Fantasy format (SECTION X without punctuation)
+- `test-real-import.js` - Verification for real import format
 
 ## Testing
 
