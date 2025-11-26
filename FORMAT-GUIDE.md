@@ -110,6 +110,34 @@ Section 2: Another Section
 More narrative text here...
 ```
 
+**Alternative: Standalone Numbers (Most Common in Real Books)**
+
+Many imported gamebooks use standalone numbers without the "Section" word:
+
+```
+Title: Your Adventure Title
+Author: Your Name
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+0
+
+This is the introduction. Just a number on its own line works!
+
+1
+
+You begin your adventure here. The parser recognizes this format
+automatically. This is the most common format in real Fighting Fantasy
+book imports and PDFs.
+
+If you want to continue, turn to 2
+
+2
+
+More adventure text here...
+```
+
 ### Metadata (Optional)
 
 Place these at the beginning of your file:
@@ -133,8 +161,9 @@ The parser recognizes these formats:
 - `SECTION 1:` or `SECTION 1.`
 - `[1]` (brackets)
 - `(1)` (parentheses)
-- `1.` or `1:` (number at start of line - common in PDFs)
+- `1.` or `1:` (number with period/colon at start of line)
 - `**1**` (Markdown bold - double asterisks)
+- `1` (standalone number on its own line - **most common in real imports**)
 
 ### Creating Choices
 
@@ -308,8 +337,9 @@ PDF files are automatically converted to text and then parsed using the text for
 - `Section 1:` or `SECTION 1:`
 - `[1]` (brackets)
 - `(1)` (parentheses)
-- `1.` or `1:` at the start of a line (common in Fighting Fantasy books)
+- `1.` or `1:` at the start of a line
 - `**1**` (Markdown bold with double asterisks)
+- `1` (standalone number on its own line - **works with most real gamebook PDFs**)
 
 **Tips for PDFs:**
 - The parser preserves line breaks and text structure from the PDF
