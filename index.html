@@ -1141,12 +1141,23 @@
                 });
             }
 
+            // Determine starting section: prefer section 1 (adventure start), skip section 0 (intro)
+            let startingSection = 1;
+            const section1 = sections.find(s => s.id === 1);
+            if (section1) {
+                startingSection = 1;
+            } else {
+                // If no section 1, find first section with id > 0 (skip intro)
+                const firstNonIntro = sections.find(s => s.id > 0);
+                startingSection = firstNonIntro?.id || 1;
+            }
+
             return {
                 id: title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
                 title: title,
                 author: author,
                 description: description,
-                startingSection: sections[0]?.id || 1,
+                startingSection: startingSection,
                 initialStats: { skill, stamina, luck },
                 startingItems: [],
                 sections: sections
