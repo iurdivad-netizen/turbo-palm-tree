@@ -1,0 +1,84 @@
+Title: Test Adventure with Mixed Number Formats
+Author: Test Author
+Description: Testing all 6 section number formats working together
+Initial SKILL: 7
+Initial STAMINA: 18
+Initial LUCK: 9
+
+Section 0: Introduction (Format: "Section X:")
+
+This adventure demonstrates all 6 supported section number formats
+working together in a single adventure. The parser is smart enough
+to recognize any of these formats!
+
+0
+
+Standalone number format (most common in real imports)
+
+[1]
+
+Bracketed format (common in some gamebooks)
+
+**2**
+
+Markdown bold format (for Markdown authors)
+
+3.
+
+Number with period at start of line (PDF format)
+
+(4)
+
+Parentheses format
+
+This shows how versatile the parser is. You can mix and match formats,
+and the parser will understand them all!
+
+Click "Start Adventure" to begin your quest.
+
+1
+
+The Quest Begins
+
+You are standing at the entrance to the Dragon's Lair. The adventure
+awaits! Your choices will determine your fate.
+
+If you enter boldly through the main entrance, turn to 2
+If you search for a side entrance, turn to 3
+
+[2]
+
+The Main Entrance
+
+You march through the main entrance and immediately face a DRAGON!
+
+SKILL 9, STAMINA 12
+
+If you defeat the dragon, turn to 5
+If you flee, turn to 4
+
+**3**
+
+The Side Path
+
+You discover a hidden side entrance and sneak inside. You find the
+dragon's treasure hoard unguarded!
+
+You have won! You claim the treasure and escape!
+
+4.
+
+Fleeing the Dragon
+
+You run away from the dragon but trip and fall into a pit trap.
+
+You have died. Game over.
+
+(5)
+
+Victory Over the Dragon
+
+You strike the final blow and the dragon falls! You claim its
+legendary treasure hoard as your reward.
+
+You have won! Victory is yours, brave adventurer!

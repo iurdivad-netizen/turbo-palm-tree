@@ -1,0 +1,54 @@
+Title: Test Adventure with Standalone Numbers
+Author: Test Author
+Description: Testing standalone numbers without "section" word (common in real gamebooks)
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+0
+
+This is the introduction section. In many Fighting Fantasy and gamebook
+imports, section numbers appear as standalone numbers on their own line,
+without the word "section" or any punctuation.
+
+This format is very common in:
+- PDF exports from original books
+- OCR scanned gamebooks
+- Text files from various sources
+
+The parser now recognizes this format automatically. When you load this
+adventure, you'll see this introduction first with a "Start Adventure"
+button. Click it to begin at section 1.
+
+1
+
+You stand in a dimly lit corridor. The stone walls are damp and covered
+with ancient moss. Two passages branch off ahead of you.
+
+If you take the left passage, turn to 2
+If you take the right passage, turn to 3
+
+2
+
+You follow the left passage and discover a hidden treasure room! Gold
+coins and jewels sparkle in the torchlight. You carefully gather the
+treasure and find an exit that leads to safety.
+
+You have won! Congratulations on your successful adventure!
+
+3
+
+You take the right passage, but it leads to a dead end. As you turn
+around, you hear a rumbling sound. The ceiling begins to collapse!
+
+You narrowly escape with your life, but you must abandon the quest
+for now. Perhaps you'll have better luck next time.
+
+Your adventure ends here. The end.
+
+999
+
+This is the traditional "death" ending section. If you had taken a
+wrong turn or failed in combat, you might have ended up here.
+
+Your adventure ends in defeat. Game over.
