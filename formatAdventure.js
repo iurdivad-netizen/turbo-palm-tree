@@ -1,0 +1,463 @@
+#!/usr/bin/env node
+
+/**
+ * Adventure Formatter Tool
+ *
+ * This tool helps users format their adventures/books properly for the app.
+ * It validates format, identifies issues, and can convert between TXT and JSON formats.
+ *
+ * Usage:
+ *   node formatAdventure.js validate <file>           - Validate an adventure file
+ *   node formatAdventure.js convert <file> [output]   - Convert TXT to JSON
+ *   node formatAdventure.js check <file>              - Check for common issues
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// ANSI color codes for terminal output
+const colors = {
+  reset: '\x1b[0m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
+  bold: '\x1b[1m',
+};
+
+function log(message, color = 'reset') {
+  console.log(`${colors[color]}${message}${colors.reset}`);
+}
+
+function parseMetadata(text) {
+  const metadata = {
+    title: '',
+    author: '',
+    description: '',
+    initialSkill: 6,
+    initialStamina: 14,
+    initialLuck: 6,
+  };
+
+  const titleMatch = text.match(/(?:Title|TITLE|Adventure):\s*(.+)/i);
+  const authorMatch = text.match(/(?:Author|By):\s*(.+)/i);
+  const descMatch = text.match(/(?:Description|Desc):\s*(.+)/i);
+  const skillMatch = text.match(/(?:Initial\s+)?SKILL:\s*(\d+)/i);
+  const staminaMatch = text.match(/(?:Initial\s+)?STAMINA:\s*(\d+)/i);
+  const luckMatch = text.match(/(?:Initial\s+)?LUCK:\s*(\d+)/i);
+
+  if (titleMatch) metadata.title = titleMatch[1].trim();
+  if (authorMatch) metadata.author = authorMatch[1].trim();
+  if (descMatch) metadata.description = descMatch[1].trim();
+  if (skillMatch) metadata.initialSkill = parseInt(skillMatch[1]);
+  if (staminaMatch) metadata.initialStamina = parseInt(staminaMatch[1]);
+  if (luckMatch) metadata.initialLuck = parseInt(luckMatch[1]);
+
+  return metadata;
+}
+
+function findSections(text) {
+  const sectionRegex = /(?:^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
+  const sections = [];
+  let match;
+
+  while ((match = sectionRegex.exec(text)) !== null) {
+    const sectionNum = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6]);
+    sections.push({
+      id: sectionNum,
+      position: match.index,
+      matchText: match[0],
+    });
+  }
+
+  return sections;
+}
+
+function extractSectionContent(text, sections) {
+  const parsed = [];
+
+  for (let i = 0; i < sections.length; i++) {
+    const current = sections[i];
+    const next = sections[i + 1];
+
+    const startPos = current.position + current.matchText.length;
+    const endPos = next ? next.position : text.length;
+    const content = text.substring(startPos, endPos).trim();
+
+    // Extract title (first line if it exists)
+    const lines = content.split('\n');
+    const titleMatch = lines[0]?.match(/^([^\n]+?)(?:\n|$)/);
+    const title = titleMatch && titleMatch[1].length < 100 ? titleMatch[1].trim() : '';
+
+    // Extract choices
+    const choiceRegex = /(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)/gi;
+    const choices = [];
+    let choiceMatch;
+
+    while ((choiceMatch = choiceRegex.exec(content)) !== null) {
+      choices.push({
+        targetSection: parseInt(choiceMatch[1]),
+        text: choiceMatch[0],
+      });
+    }
+
+    // Extract combat
+    const combatMatch = content.match(/([A-Z\s]+?)\s+(?:SKILL|Skill)\s+(\d+)(?:,|\s+)(?:STAMINA|Stamina)\s+(\d+)/i);
+    let combat = null;
+
+    if (combatMatch) {
+      combat = {
+        enemyName: combatMatch[1].trim(),
+        enemySkill: parseInt(combatMatch[2]),
+        enemyStamina: parseInt(combatMatch[3]),
+      };
+    }
+
+    // Check for endings
+    const endingMatch = content.match(/(?:you have won|victory|you have succeeded|the end|you have died|you are dead|game over)/i);
+    const isEnding = current.id === 999 || current.id === 400 || endingMatch !== null;
+
+    parsed.push({
+      id: current.id,
+      title,
+      text: content,
+      choices,
+      combat,
+      isEnding,
+      lineNumber: text.substring(0, current.position).split('\n').length,
+    });
+  }
+
+  return parsed;
+}
+
+function validateAdventure(filePath) {
+  log('\n📚 Validating Adventure File...', 'cyan');
+  log('='.repeat(50), 'cyan');
+
+  const text = fs.readFileSync(filePath, 'utf-8');
+  const metadata = parseMetadata(text);
+  const sections = findSections(text);
+  const parsedSections = extractSectionContent(text, sections);
+
+  const issues = [];
+  const warnings = [];
+
+  // Check metadata
+  if (!metadata.title) {
+    issues.push('❌ Missing title (add "Title: Your Adventure Name")');
+  } else {
+    log(`✅ Title: ${metadata.title}`, 'green');
+  }
+
+  if (!metadata.author) {
+    warnings.push('⚠️  Missing author (optional: add "Author: Your Name")');
+  } else {
+    log(`✅ Author: ${metadata.author}`, 'green');
+  }
+
+  log(`✅ Initial Stats - SKILL: ${metadata.initialSkill}, STAMINA: ${metadata.initialStamina}, LUCK: ${metadata.initialLuck}`, 'green');
+
+  // Check sections
+  if (parsedSections.length === 0) {
+    issues.push('❌ No sections found! Use format "Section 1:" or "[1]" or "1." to mark sections');
+  } else {
+    log(`\n✅ Found ${parsedSections.length} sections`, 'green');
+  }
+
+  // Check for section 1
+  const hasSection1 = parsedSections.some(s => s.id === 1);
+  if (!hasSection1 && parsedSections.length > 0) {
+    issues.push('❌ Missing Section 1 (starting section). Adventures should start with section 1.');
+  }
+
+  // Check for duplicate sections
+  const sectionIds = parsedSections.map(s => s.id);
+  const duplicates = sectionIds.filter((id, index) => sectionIds.indexOf(id) !== index);
+
+  if (duplicates.length > 0) {
+    issues.push(`❌ Duplicate sections found: ${[...new Set(duplicates)].join(', ')}`);
+  }
+
+  // Validate choice references
+  const allIds = new Set(sectionIds);
+  const unreferencedSections = new Set(sectionIds);
+  const brokenLinks = [];
+
+  parsedSections.forEach(section => {
+    section.choices.forEach(choice => {
+      unreferencedSections.delete(choice.targetSection);
+
+      if (!allIds.has(choice.targetSection) && choice.targetSection !== 999) {
+        brokenLinks.push(`Section ${section.id} → ${choice.targetSection} (missing)`);
+      }
+    });
+  });
+
+  if (brokenLinks.length > 0) {
+    issues.push(`❌ Broken links found:\n   ${brokenLinks.slice(0, 5).join('\n   ')}${brokenLinks.length > 5 ? `\n   ... and ${brokenLinks.length - 5} more` : ''}`);
+  }
+
+  // Check for unreachable sections (except section 1 and 0)
+  const unreachable = [...unreferencedSections].filter(id => id !== 1 && id !== 0);
+  if (unreachable.length > 0) {
+    warnings.push(`⚠️  Unreachable sections (not linked from anywhere): ${unreachable.slice(0, 5).join(', ')}${unreachable.length > 5 ? ` ... and ${unreachable.length - 5} more` : ''}`);
+  }
+
+  // Check for sections without choices (dead ends)
+  const deadEnds = parsedSections.filter(s => s.choices.length === 0 && !s.isEnding);
+  if (deadEnds.length > 0) {
+    warnings.push(`⚠️  Sections without choices (potential dead ends): ${deadEnds.slice(0, 3).map(s => s.id).join(', ')}${deadEnds.length > 3 ? ` ... and ${deadEnds.length - 3} more` : ''}`);
+  }
+
+  // Display results
+  log('\n' + '='.repeat(50), 'cyan');
+
+  if (issues.length === 0) {
+    log('\n✅ VALIDATION PASSED!', 'green');
+    log('Your adventure is properly formatted and ready to use!', 'green');
+  } else {
+    log('\n❌ VALIDATION FAILED', 'red');
+    log('\nCritical Issues:', 'red');
+    issues.forEach(issue => log(issue, 'red'));
+  }
+
+  if (warnings.length > 0) {
+    log('\nWarnings:', 'yellow');
+    warnings.forEach(warning => log(warning, 'yellow'));
+  }
+
+  // Summary
+  log('\n' + '='.repeat(50), 'cyan');
+  log('Summary:', 'cyan');
+  log(`  Sections: ${parsedSections.length}`, 'blue');
+  log(`  Total choices: ${parsedSections.reduce((sum, s) => sum + s.choices.length, 0)}`, 'blue');
+  log(`  Combat encounters: ${parsedSections.filter(s => s.combat).length}`, 'blue');
+  log(`  Endings: ${parsedSections.filter(s => s.isEnding).length}`, 'blue');
+  log('='.repeat(50) + '\n', 'cyan');
+
+  return {
+    valid: issues.length === 0,
+    issues,
+    warnings,
+    metadata,
+    sections: parsedSections,
+  };
+}
+
+function convertToJSON(filePath, outputPath) {
+  log('\n🔄 Converting Adventure to JSON...', 'cyan');
+  log('='.repeat(50), 'cyan');
+
+  const text = fs.readFileSync(filePath, 'utf-8');
+  const metadata = parseMetadata(text);
+  const sections = findSections(text);
+  const parsedSections = extractSectionContent(text, sections);
+
+  // Build JSON structure
+  const jsonAdventure = {
+    id: metadata.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+    title: metadata.title,
+    author: metadata.author,
+    description: metadata.description,
+    startingSection: 1,
+    initialStats: {
+      skill: metadata.initialSkill,
+      stamina: metadata.initialStamina,
+      luck: metadata.initialLuck,
+    },
+    sections: parsedSections.map(section => {
+      const jsonSection = {
+        id: section.id,
+        text: section.text,
+      };
+
+      if (section.title) {
+        jsonSection.title = section.title;
+      }
+
+      if (section.choices.length > 0) {
+        jsonSection.choices = section.choices.map(choice => ({
+          text: choice.text,
+          targetSection: choice.targetSection,
+        }));
+      }
+
+      if (section.combat) {
+        jsonSection.combat = {
+          enemyName: section.combat.enemyName,
+          enemySkill: section.combat.enemySkill,
+          enemyStamina: section.combat.enemyStamina,
+          onVictorySection: section.choices[0]?.targetSection || section.id + 1,
+          onDefeatSection: 999,
+        };
+      }
+
+      if (section.isEnding) {
+        jsonSection.isEnding = true;
+
+        // Determine ending type
+        if (section.id === 999 || section.text.match(/you have died|you are dead|game over/i)) {
+          jsonSection.endingType = 'defeat';
+        } else if (section.text.match(/you have won|victory|you have succeeded/i)) {
+          jsonSection.endingType = 'victory';
+        } else {
+          jsonSection.endingType = 'neutral';
+        }
+      }
+
+      return jsonSection;
+    }),
+  };
+
+  // Determine output path
+  const output = outputPath || filePath.replace(/\.(txt|md)$/i, '.json');
+
+  fs.writeFileSync(output, JSON.stringify(jsonAdventure, null, 2));
+
+  log(`\n✅ Successfully converted to JSON!`, 'green');
+  log(`📄 Output file: ${output}`, 'green');
+  log('='.repeat(50) + '\n', 'cyan');
+
+  return jsonAdventure;
+}
+
+function checkForIssues(filePath) {
+  log('\n🔍 Checking for Common Issues...', 'cyan');
+  log('='.repeat(50), 'cyan');
+
+  const text = fs.readFileSync(filePath, 'utf-8');
+  const sections = findSections(text);
+  const parsedSections = extractSectionContent(text, sections);
+
+  const issues = [];
+
+  // Check section numbering gaps
+  const sortedIds = [...new Set(parsedSections.map(s => s.id))].sort((a, b) => a - b);
+  const gaps = [];
+
+  for (let i = 0; i < sortedIds.length - 1; i++) {
+    const diff = sortedIds[i + 1] - sortedIds[i];
+    if (diff > 1) {
+      gaps.push(`Gap between section ${sortedIds[i]} and ${sortedIds[i + 1]} (${diff - 1} sections missing)`);
+    }
+  }
+
+  if (gaps.length > 0) {
+    log('\n⚠️  Section numbering gaps:', 'yellow');
+    gaps.forEach(gap => log(`   ${gap}`, 'yellow'));
+  }
+
+  // Check for very short sections
+  const shortSections = parsedSections.filter(s => s.text.length < 50);
+  if (shortSections.length > 0) {
+    log('\n⚠️  Very short sections (might need more content):', 'yellow');
+    shortSections.slice(0, 5).forEach(s => {
+      log(`   Section ${s.id}: "${s.text.substring(0, 40)}..."`, 'yellow');
+    });
+  }
+
+  // Check for sections with many choices
+  const manyChoices = parsedSections.filter(s => s.choices.length > 4);
+  if (manyChoices.length > 0) {
+    log('\n💡 Sections with many choices (consider splitting):', 'blue');
+    manyChoices.forEach(s => {
+      log(`   Section ${s.id}: ${s.choices.length} choices`, 'blue');
+    });
+  }
+
+  // Check for combat without victory section
+  const combatNoVictory = parsedSections.filter(s => s.combat && s.choices.length === 0);
+  if (combatNoVictory.length > 0) {
+    log('\n⚠️  Combat encounters without clear victory path:', 'yellow');
+    combatNoVictory.forEach(s => {
+      log(`   Section ${s.id}: ${s.combat.enemyName}`, 'yellow');
+    });
+  }
+
+  // Format recommendations
+  log('\n💡 Format Recommendations:', 'blue');
+  log('   ✓ Use consistent section headers (e.g., "Section 1:" or "[1]")', 'blue');
+  log('   ✓ Each section should have 1-4 choices for good gameplay', 'blue');
+  log('   ✓ Include at least one ending (section 999 is traditional death)', 'blue');
+  log('   ✓ For combat: "ENEMY_NAME SKILL X STAMINA Y"', 'blue');
+  log('   ✓ For choices: "turn to X" or "go to X"', 'blue');
+
+  log('\n' + '='.repeat(50) + '\n', 'cyan');
+}
+
+function showHelp() {
+  log('\n📚 Adventure Formatter Tool', 'cyan');
+  log('='.repeat(50), 'cyan');
+  log('\nThis tool helps format adventures for the gamebook app.', 'reset');
+  log('\nUsage:', 'bold');
+  log('  node formatAdventure.js validate <file>         - Validate adventure format', 'reset');
+  log('  node formatAdventure.js convert <file> [output] - Convert TXT to JSON', 'reset');
+  log('  node formatAdventure.js check <file>            - Check for common issues', 'reset');
+  log('\nExamples:', 'bold');
+  log('  node formatAdventure.js validate my-adventure.txt', 'reset');
+  log('  node formatAdventure.js convert my-adventure.txt my-adventure.json', 'reset');
+  log('  node formatAdventure.js check my-adventure.txt', 'reset');
+  log('\nSupported Formats:', 'bold');
+  log('  Input:  .txt, .md', 'reset');
+  log('  Output: .json', 'reset');
+  log('\nFormat Guide:', 'bold');
+  log('  - Metadata: "Title: Name", "Author: Name", "Initial SKILL: 6"', 'reset');
+  log('  - Sections: "Section 1:" or "[1]" or "1."', 'reset');
+  log('  - Choices: "turn to 5" or "go to 10"', 'reset');
+  log('  - Combat: "GOBLIN SKILL 6 STAMINA 8"', 'reset');
+  log('='.repeat(50) + '\n', 'cyan');
+}
+
+// Main CLI handler
+function main() {
+  const args = process.argv.slice(2);
+
+  if (args.length === 0 || args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
+    showHelp();
+    return;
+  }
+
+  const command = args[0];
+  const filePath = args[1];
+
+  if (!filePath) {
+    log('❌ Error: Please provide a file path', 'red');
+    log('Usage: node formatAdventure.js <command> <file>', 'yellow');
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(filePath)) {
+    log(`❌ Error: File not found: ${filePath}`, 'red');
+    process.exit(1);
+  }
+
+  switch (command) {
+    case 'validate':
+      validateAdventure(filePath);
+      break;
+
+    case 'convert':
+      const outputPath = args[2];
+      convertToJSON(filePath, outputPath);
+      break;
+
+    case 'check':
+      checkForIssues(filePath);
+      break;
+
+    default:
+      log(`❌ Unknown command: ${command}`, 'red');
+      log('Valid commands: validate, convert, check', 'yellow');
+      showHelp();
+      process.exit(1);
+  }
+}
+
+// Run if called directly
+if (require.main === module) {
+  main();
+}
+
+module.exports = { validateAdventure, convertToJSON, checkForIssues };
