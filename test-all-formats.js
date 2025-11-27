@@ -12,7 +12,8 @@ const files = [
 
 // FIXED: All patterns now require start of line to avoid false positives
 // Note: Colons and other punctuation are OPTIONAL for "Section N" format
-const sectionRegex = /(?:^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
+// Supports markdown headers like "## SECTION 1 {#section-1}"
+const sectionRegex = /(?:^#+\s*(?:Section|SECTION)\s+(\d+)(?:\s*\{[^}]*\})?|^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
 
 files.forEach(filename => {
     console.log(`\n=== Testing ${filename} ===`);
@@ -24,7 +25,7 @@ files.forEach(filename => {
 
         const regex = new RegExp(sectionRegex.source, sectionRegex.flags);
         while ((match = regex.exec(text)) !== null) {
-            const sectionId = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6]);
+            const sectionId = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6] || match[7]);
             matches.push(sectionId);
         }
 

@@ -313,7 +313,7 @@
             <h2 class="card-title">Input Your Adventure</h2>
             <p class="help-text">
                 Paste your adventure text below or load a file. The formatter will validate the format and show you any issues.
-                <strong>Note:</strong> Section colons are optional - use "Section 1" or "Section 1:", both work!
+                <strong>Note:</strong> Section colons are optional - use "Section 1", "Section 1:", or "## SECTION 1", all work! Markdown headers with anchors like "## SECTION 1 {#section-1}" are also supported.
             </p>
 
             <div class="button-group">
@@ -430,14 +430,14 @@ If you want to enter, turn to 2.
 
         // Find sections
         // Matches various section header formats. Colons and punctuation are OPTIONAL.
-        // Supported formats: "Section 1", "Section 1:", "[1]", "(1)", "1.", "**1**", etc.
+        // Supported formats: "Section 1", "Section 1:", "## SECTION 1 {#section-1}", "[1]", "(1)", "1.", "**1**", etc.
         function findSections(text) {
-            const sectionRegex = /(?:^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
+            const sectionRegex = /(?:^#+\s*(?:Section|SECTION)\s+(\d+)(?:\s*\{[^}]*\})?|^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
             const sections = [];
             let match;
 
             while ((match = sectionRegex.exec(text)) !== null) {
-                const sectionNum = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6]);
+                const sectionNum = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6] || match[7]);
                 sections.push({
                     id: sectionNum,
                     position: match.index,
@@ -532,7 +532,7 @@ If you want to enter, turn to 2.
 
             // Check sections
             if (parsedSections.length === 0) {
-                issues.push('No sections found! Use format "Section 1" or "Section 1:" or "[1]" or "1." to mark sections');
+                issues.push('No sections found! Use format "Section 1", "Section 1:", "## SECTION 1", "[1]", or "1." to mark sections');
             }
 
             // Check for section 1
