@@ -93,13 +93,15 @@ function extractSectionContent(text, sections) {
     const title = titleMatch && titleMatch[1].length < 100 ? titleMatch[1].trim() : '';
 
     // Extract choices
-    const choiceRegex = /(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)/gi;
+    // Matches both traditional format ("turn to 5") and markdown links ("[5](#section-5)")
+    const choiceRegex = /(?:(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)|\[(\d+)\]\([^\)]*\))/gi;
     const choices = [];
     let choiceMatch;
 
     while ((choiceMatch = choiceRegex.exec(content)) !== null) {
+      const targetSection = parseInt(choiceMatch[1] || choiceMatch[2]);
       choices.push({
-        targetSection: parseInt(choiceMatch[1]),
+        targetSection: targetSection,
         text: choiceMatch[0],
       });
     }
@@ -386,7 +388,7 @@ function checkForIssues(filePath) {
   log('   ✓ Each section should have 1-4 choices for good gameplay', 'blue');
   log('   ✓ Include at least one ending (section 999 is traditional death)', 'blue');
   log('   ✓ For combat: "ENEMY_NAME SKILL X STAMINA Y"', 'blue');
-  log('   ✓ For choices: "turn to X" or "go to X"', 'blue');
+  log('   ✓ For choices: "turn to X", "go to X", or markdown "[X](#section-X)"', 'blue');
 
   log('\n' + '='.repeat(50) + '\n', 'cyan');
 }
@@ -410,7 +412,7 @@ function showHelp() {
   log('  - Metadata: "Title: Name", "Author: Name", "Initial SKILL: 6"', 'reset');
   log('  - Sections: "Section 1", "Section 1:", "## SECTION 1", "[1]", "1."', 'reset');
   log('  - Markdown: "## SECTION 1 {#section-1}" (with optional anchor)', 'reset');
-  log('  - Choices: "turn to 5" or "go to 10"', 'reset');
+  log('  - Choices: "turn to 5", "go to 10", or "[5](#section-5)"', 'reset');
   log('  - Combat: "GOBLIN SKILL 6 STAMINA 8"', 'reset');
   log('='.repeat(50) + '\n', 'cyan');
 }
