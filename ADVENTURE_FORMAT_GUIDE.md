@@ -2,6 +2,17 @@
 
 Welcome to the Adventure Formatter! This guide will help you format your gamebook adventures properly for the app.
 
+## ⭐ New Features
+
+The formatter now supports even more flexible formats:
+
+- **Optional Colons**: Use `Section 1` or `Section 1:` - both work!
+- **Markdown Headers**: Support for `## SECTION 1 {#section-1}` format
+- **Markdown Links**: Choices can use `[45](#section-45)` format
+- **Mixed Formats**: Combine different styles in the same file
+
+Perfect for converting existing markdown documents or creating new adventures in your preferred format!
+
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
@@ -99,29 +110,53 @@ Sections are the building blocks of your adventure. Each section has:
 
 ### Section Format Options
 
-The app recognizes several formats:
+The app recognizes several formats. **You can mix different formats in the same file!**
 
-#### Option 1: "Section X:" (Recommended)
+#### Option 1: Plain Format (Most Flexible) ⭐
 ```
-Section 1: The Dark Cave
+Section 1
+Section 1:
+Section 1.
+SECTION 1
 ```
+**Note:** Colons and punctuation are **completely optional**! Both `Section 1` and `Section 1:` work perfectly.
 
-#### Option 2: Brackets
+#### Option 2: Markdown Headers ⭐ NEW
 ```
+## SECTION 1
+## SECTION 1 {#section-1}
+### Section 1
+# SECTION 1 {#section-1}
+```
+- Any number of `#` symbols works
+- Anchor tags `{#...}` are optional
+- Perfect for markdown documents
+- Case-insensitive (SECTION or Section)
+
+#### Option 3: Brackets
+```
+[1]
 [1] The Dark Cave
 ```
 
-#### Option 3: Number with period
+#### Option 4: Number with period
 ```
+1.
 1. The Dark Cave
 ```
 
-#### Option 4: Parentheses
+#### Option 5: Parentheses
 ```
+(1)
 (1) The Dark Cave
 ```
 
-#### Option 5: Standalone number
+#### Option 6: Markdown Bold
+```
+**1**
+```
+
+#### Option 7: Standalone number
 ```
 1
 ```
@@ -150,8 +185,9 @@ If you want to leave the room, go to 3.
 
 Choices let players navigate between sections.
 
-### Supported Patterns
+### Supported Choice Formats
 
+#### Format 1: Traditional Text Choices
 The app recognizes these choice phrases:
 
 - `turn to X`
@@ -162,8 +198,7 @@ The app recognizes these choice phrases:
 - `head to X`
 - `return to X`
 
-### Examples
-
+**Examples:**
 ```
 If you want to fight, turn to 15.
 To run away, go to 8.
@@ -171,11 +206,42 @@ You may proceed to section 20.
 Continue to 5 if you have a key.
 ```
 
+#### Format 2: Markdown Link Choices ⭐ NEW
+Use markdown link format for clickable choices:
+
+```
+[45](#section-45)
+[127](#section-127)
+```
+
+**With descriptive text:**
+```
+Turn to [45](#section-45) to enter the Weeping Willow tavern
+Turn to [127](#section-127) to investigate the cemetery
+Turn to [234](#section-234) to visit Mayor Hollow's manor
+```
+
+This format is perfect for markdown documents and provides clickable links in markdown viewers.
+
+#### Format 3: Mixed Formats
+You can even mix both styles in the same adventure:
+
+```
+Section 10
+
+You stand at a crossroads.
+
+If you go left, turn to 5.
+Go right: [15](#section-15)
+Or return to [1](#section-1)
+```
+
 ### Best Practices
 
 - **1-4 choices per section** is ideal for gameplay
 - Make choices clear and meaningful
 - Every section should have at least one choice (unless it's an ending)
+- Both traditional and markdown link formats work equally well
 
 ---
 
@@ -465,7 +531,108 @@ Section 999: Defeat
 The dragon's flames consume you. You have died.
 ```
 
-### Example 3: JSON Format (Advanced)
+### Example 3: Markdown Format (With New Features) ⭐
+
+```markdown
+Title: The Haunted Village
+Author: Adventure Master
+Description: A spooky adventure using markdown format
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+## SECTION 0 {#section-0}
+
+Introduction
+
+Welcome to Hollow Creek, a village shrouded in mystery and fear.
+Strange occurrences have plagued the town, and you've been called
+to investigate.
+
+## SECTION 1 {#section-1}
+
+The Town Square
+
+You arrive in the town square. The evening mist creeps through
+the cobblestone streets. Three locations catch your attention.
+
+Turn to [45](#section-45) to enter the Weeping Willow tavern
+
+Turn to [127](#section-127) to investigate the cemetery
+
+Turn to [234](#section-234) to visit Mayor Hollow's manor
+
+## SECTION 45 {#section-45}
+
+The Weeping Willow Tavern
+
+You push open the heavy wooden door. Inside, locals huddle around
+tables, speaking in hushed tones. The bartender approaches.
+
+"Looking for trouble, stranger?" he asks.
+
+If you ask about the hauntings, turn to [100](#section-100)
+Or leave and go to [1](#section-1)
+
+## SECTION 127 {#section-127}
+
+The Cemetery
+
+The cemetery gates creak ominously. Ancient tombstones loom in
+the fog. Suddenly, a GHOST appears! SKILL 7 STAMINA 10
+
+If you defeat the ghost, turn to [200](#section-200)
+
+## SECTION 234
+
+Mayor Hollow's Manor
+
+The grand manor looms before you. Dark windows stare down like
+empty eyes. The front door is slightly ajar.
+
+Turn to [300](#section-300) to enter
+Or return to [1](#section-1)
+
+## SECTION 100 {#section-100}
+
+Information Gathered
+
+The bartender leans close. "The old cemetery... that's where it
+all started." You have learned valuable information!
+
+Turn to [127](#section-127) to investigate
+
+## SECTION 200 {#section-200}
+
+Victory Over the Ghost
+
+You defeated the ghost and found a mysterious key!
+
+Turn to [234](#section-234) to use the key at the manor
+
+Section 300
+
+The Manor's Secret
+
+Using the key, you unlock the manor's secret chamber and break
+the curse! You have won! The village is saved!
+
+Section 999
+
+Game Over
+
+The darkness claims you. You have died.
+```
+
+**Note:** This example shows:
+- ✅ Markdown headers with anchors (`## SECTION 1 {#section-1}`)
+- ✅ Sections without colons (`Section 300`)
+- ✅ Markdown link choices (`[45](#section-45)`)
+- ✅ Traditional choices mixed in
+- ✅ Combat encounters
+- ✅ Multiple endings
+
+### Example 4: JSON Format (Advanced)
 
 ```json
 {
