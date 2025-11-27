@@ -5,7 +5,7 @@ interface GameStateSnapshot {
   currentSection: number
   stats: CharacterStats | null
   inventory: Item[]
-  visitedSections: Set<number>
+  visitedSections: number[]
   inCombat: boolean
   enemyCurrentStamina: number
   combatLog: string[]
@@ -20,7 +20,7 @@ interface GameStore {
   currentSection: number
   stats: CharacterStats | null
   inventory: Item[]
-  visitedSections: Set<number>
+  visitedSections: number[]
 
   // Combat state
   inCombat: boolean
@@ -72,7 +72,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentSection: 1,
   stats: null,
   inventory: [],
-  visitedSections: new Set(),
+  visitedSections: [],
   inCombat: false,
   enemyCurrentStamina: 0,
   combatLog: [],
@@ -87,7 +87,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentSection: book.startingSection,
       stats: null,
       inventory: [],
-      visitedSections: new Set(),
+      visitedSections: [],
       history: [],
       undoCount: 0,
     })
@@ -112,7 +112,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       stats: initialStats,
       inventory: currentBook.startingItems || [],
       currentSection: currentBook.startingSection,
-      visitedSections: new Set([currentBook.startingSection]),
+      visitedSections: [currentBook.startingSection],
       history: [],
       undoCount: 0,
     })
@@ -126,7 +126,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentSection: currentBook?.startingSection || 1,
       stats: null,
       inventory: [],
-      visitedSections: new Set(),
+      visitedSections: [],
       inCombat: false,
       enemyCurrentStamina: 0,
       combatLog: [],
@@ -153,18 +153,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentSection,
       stats: stats ? { ...stats } : null,
       inventory: [...inventory],
-      visitedSections: new Set(visitedSections),
+      visitedSections: [...visitedSections],
       inCombat,
       enemyCurrentStamina,
       combatLog: [...combatLog],
     }
 
-    const newVisited = new Set(visitedSections)
-    newVisited.add(sectionId)
-
     set({
       currentSection: sectionId,
-      visitedSections: newVisited,
+      visitedSections: [...visitedSections, sectionId],
       history: [...history, snapshot],
     })
   },
@@ -284,7 +281,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentSection: previousState.currentSection,
       stats: previousState.stats ? { ...previousState.stats } : null,
       inventory: [...previousState.inventory],
-      visitedSections: new Set(previousState.visitedSections),
+      visitedSections: [...previousState.visitedSections],
       inCombat: previousState.inCombat,
       enemyCurrentStamina: previousState.enemyCurrentStamina,
       combatLog: [...previousState.combatLog],
@@ -308,7 +305,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentSection,
       stats,
       inventory,
-      visitedSections: Array.from(visitedSections),
+      visitedSections,
       undoCount,
     }
 
@@ -327,7 +324,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentSection: save.currentSection,
       stats: save.stats,
       inventory: save.inventory,
-      visitedSections: new Set(save.visitedSections),
+      visitedSections: save.visitedSections || [],
       undoCount: save.undoCount || 0,
       isGameStarted: true,
     })
