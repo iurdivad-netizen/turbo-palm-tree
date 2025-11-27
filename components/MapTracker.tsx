@@ -9,7 +9,7 @@ export default function MapTracker() {
 
   if (!currentBook) return null
 
-  const sortedVisited = Array.from(visitedSections).sort((a, b) => a - b)
+  const visitedList = Array.from(visitedSections)
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
@@ -37,7 +37,7 @@ export default function MapTracker() {
       {isExpanded && (
         <div className="max-h-96 overflow-y-auto">
           <div className="grid grid-cols-5 gap-2">
-            {sortedVisited.map(sectionId => (
+            {visitedList.map(sectionId => (
               <button
                 key={sectionId}
                 onClick={() => goToSection(sectionId)}
@@ -55,9 +55,9 @@ export default function MapTracker() {
         </div>
       )}
 
-      {!isExpanded && sortedVisited.length > 0 && (
+      {!isExpanded && visitedList.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {sortedVisited.slice(-10).map(sectionId => (
+          {visitedList.slice(-10).map(sectionId => (
             <span
               key={sectionId}
               className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -69,9 +69,9 @@ export default function MapTracker() {
               {sectionId}
             </span>
           ))}
-          {sortedVisited.length > 10 && (
+          {visitedList.length > 10 && (
             <span className="px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
-              +{sortedVisited.length - 10} more
+              +{visitedList.length - 10} more
             </span>
           )}
         </div>
@@ -83,7 +83,7 @@ export default function MapTracker() {
           Recent Path:
         </h4>
         <div className="flex items-center gap-1 flex-wrap">
-          {sortedVisited.slice(-5).map((sectionId, index) => (
+          {visitedList.slice(-5).map((sectionId, index) => (
             <div key={sectionId} className="flex items-center">
               <span
                 className={`px-2 py-1 rounded text-xs font-mono ${
@@ -94,7 +94,7 @@ export default function MapTracker() {
               >
                 {sectionId}
               </span>
-              {index < sortedVisited.slice(-5).length - 1 && (
+              {index < visitedList.slice(-5).length - 1 && (
                 <span className="mx-1 text-gray-400">→</span>
               )}
             </div>
