@@ -35,6 +35,7 @@ export interface CombatEncounter {
   onDefeatSection?: number
   canFlee?: boolean
   fleeSection?: number
+  rewardItems?: Item[]
 }
 
 export interface TestYourLuck {
