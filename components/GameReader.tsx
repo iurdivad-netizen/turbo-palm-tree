@@ -217,20 +217,41 @@ export default function GameReader() {
 
 // Test Your Luck Component
 function TestLuckComponent({ testLuck }: { testLuck: any }) {
-  const { testLuck: performLuckTest, goToSection, rollTwoDice } = useGameStore()
+  const { testLuck: performLuckTest, goToSection, rollTwoDice, stats } = useGameStore()
   const [result, setResult] = useState<string | null>(null)
+  const [roll, setRoll] = useState<number | null>(null)
+  const [isSimulating, setIsSimulating] = useState(true)
+
+  // Auto-simulate luck test
+  useEffect(() => {
+    if (isSimulating && !result) {
+      const timer = setTimeout(() => {
+        handleTestLuck()
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [isSimulating, result])
 
   const handleTestLuck = () => {
+    const diceRoll = rollTwoDice()
+    setRoll(diceRoll)
     const { success } = performLuckTest()
+
     if (success) {
       setResult('Lucky!')
+      if (testLuck.successText) {
+        // Success text is shown
+      }
       if (testLuck.successSection) {
-        setTimeout(() => goToSection(testLuck.successSection), 2000)
+        setTimeout(() => goToSection(testLuck.successSection), 2500)
       }
     } else {
       setResult('Unlucky!')
+      if (testLuck.failureText) {
+        // Failure text is shown
+      }
       if (testLuck.failureSection) {
-        setTimeout(() => goToSection(testLuck.failureSection), 2000)
+        setTimeout(() => goToSection(testLuck.failureSection), 2500)
       }
     }
   }
@@ -240,15 +261,60 @@ function TestLuckComponent({ testLuck }: { testLuck: any }) {
       <h4 className="font-bold text-purple-900 dark:text-purple-100 mb-2">
         Test Your Luck!
       </h4>
-      {!result ? (
-        <button
-          onClick={handleTestLuck}
-          className="px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
-        >
-          Roll the Dice
-        </button>
+
+      {roll !== null ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="text-sm text-purple-700 dark:text-purple-300 mb-1">Your Roll</p>
+              <div className="text-3xl mb-1">🎲🎲</div>
+              <p className="text-2xl font-bold">{roll}</p>
+            </div>
+            <div className="text-2xl">
+              {roll <= (stats?.luck || 0) ? '✅' : '❌'}
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-purple-700 dark:text-purple-300 mb-1">Luck Required</p>
+              <p className="text-2xl font-bold mt-3">≤ {stats?.luck || 0}</p>
+            </div>
+          </div>
+          <p className="text-lg font-semibold text-center mt-2">
+            {result}
+          </p>
+          {testLuck.successText && result === 'Lucky!' && (
+            <p className="text-sm text-purple-800 dark:text-purple-200 mt-2">
+              {testLuck.successText}
+            </p>
+          )}
+          {testLuck.failureText && result === 'Unlucky!' && (
+            <p className="text-sm text-purple-800 dark:text-purple-200 mt-2">
+              {testLuck.failureText}
+            </p>
+          )}
+        </div>
       ) : (
-        <p className="text-lg font-semibold">{result}</p>
+        <div className="flex gap-2">
+          <p className="text-purple-800 dark:text-purple-200">
+            {isSimulating ? 'Rolling dice...' : 'Ready to test your luck!'}
+          </p>
+          {!isSimulating && (
+            <button
+              onClick={handleTestLuck}
+              className="px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+            >
+              Roll the Dice
+            </button>
+          )}
+        </div>
+      )}
+
+      {!result && (
+        <button
+          onClick={() => setIsSimulating(!isSimulating)}
+          className="mt-2 px-4 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded transition-colors"
+        >
+          {isSimulating ? '⏸️ Pause' : '▶️ Auto-Roll'}
+        </button>
       )}
     </div>
   )

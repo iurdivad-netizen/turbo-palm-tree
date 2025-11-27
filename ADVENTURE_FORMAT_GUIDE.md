@@ -10,6 +10,9 @@ The formatter now supports even more flexible formats:
 - **Markdown Headers**: Support for `## SECTION 1 {#section-1}` format
 - **Markdown Links**: Choices can use `[45](#section-45)` format
 - **Mixed Formats**: Combine different styles in the same file
+- **Auto-Combat**: Combat rounds are automatically simulated with visual feedback
+- **Auto-Luck Tests**: Test Your Luck rolls happen automatically
+- **Combat Rewards**: Defeated enemies can drop items for your inventory
 
 Perfect for converting existing markdown documents or creating new adventures in your preferred format!
 
@@ -278,6 +281,43 @@ If you defeat the troll, turn to 12.
 - Enemy name should be in CAPITAL LETTERS
 - Always include a victory section (where to go after winning)
 - If the player loses, they automatically go to section 999 (death)
+- **Combat is automatically simulated**: Rounds play out with 2-second delays
+- **Pause/Resume**: Players can pause auto-combat and fight manually
+- **Visual feedback**: See dice rolls, damage, and combat log in real-time
+
+### Combat Rewards (JSON Format Only)
+
+Defeated enemies can drop items that are automatically added to the player's inventory:
+
+```json
+{
+  "id": 7,
+  "text": "A fearsome troll blocks your path!",
+  "combat": {
+    "enemyName": "Troll",
+    "enemySkill": 9,
+    "enemyStamina": 15,
+    "onVictorySection": 12,
+    "onDefeatSection": 999,
+    "rewardItems": [
+      {
+        "id": "troll-key",
+        "name": "Rusty Key",
+        "description": "Taken from the defeated troll",
+        "type": "key"
+      },
+      {
+        "id": "gold-coins",
+        "name": "Gold Coins",
+        "description": "20 gold pieces",
+        "type": "treasure"
+      }
+    ]
+  }
+}
+```
+
+When the player defeats the enemy, all reward items are automatically added to their inventory with a notification in the combat log.
 
 ---
 
@@ -356,6 +396,8 @@ Item types: `weapon`, `armor`, `potion`, `treasure`, `key`, `other`
 
 ### Luck Tests (JSON Format Only)
 
+Test Your Luck is a core mechanic where players roll 2d6 against their current Luck stat:
+
 ```json
 {
   "id": 10,
@@ -368,6 +410,13 @@ Item types: `weapon`, `armor`, `potion`, `treasure`, `key`, `other`
   }
 }
 ```
+
+**Automatic Luck Tests**:
+- The dice roll happens automatically after 1.5 seconds
+- Visual display shows the roll result vs. required Luck
+- Success or failure is clearly indicated
+- Players can pause the auto-roll if they want manual control
+- Luck decreases by 1 after each test (automatically handled)
 
 ---
 

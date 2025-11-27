@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { CombatEncounter } from '@/types/game'
 
@@ -22,12 +22,15 @@ export default function CombatManager({ combat }: CombatManagerProps) {
     rollDice,
     rollTwoDice,
     goToSection,
+    addItem,
   } = useGameStore()
 
   const [playerRoll, setPlayerRoll] = useState<number | null>(null)
   const [enemyRoll, setEnemyRoll] = useState<number | null>(null)
   const [roundResult, setRoundResult] = useState<string | null>(null)
   const [combatEnded, setCombatEnded] = useState(false)
+  const [isSimulating, setIsSimulating] = useState(true)
+  const combatTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!inCombat) {
@@ -36,6 +39,23 @@ export default function CombatManager({ combat }: CombatManagerProps) {
       addCombatLog(`${combat.enemyName}: SKILL ${combat.enemySkill}, STAMINA ${combat.enemyStamina}`)
     }
   }, [])
+
+  // Auto-simulate combat
+  useEffect(() => {
+    if (inCombat && isSimulating && !combatEnded && stats) {
+      // Wait 1.5 seconds before starting the first round, then 2 seconds between rounds
+      const delay = combatLog.length <= 2 ? 1500 : 2000
+      combatTimeoutRef.current = setTimeout(() => {
+        fightRound()
+      }, delay)
+    }
+
+    return () => {
+      if (combatTimeoutRef.current) {
+        clearTimeout(combatTimeoutRef.current)
+      }
+    }
+  }, [inCombat, isSimulating, combatEnded, stats, combatLog.length, enemyCurrentStamina])
 
   const fightRound = () => {
     if (!stats || combatEnded) return
@@ -67,13 +87,23 @@ export default function CombatManager({ combat }: CombatManagerProps) {
 
       if (newEnemyStamina <= 0) {
         addCombatLog(`\n🎉 You defeated ${combat.enemyName}!`)
+
+        // Award items if any
+        if (combat.rewardItems && combat.rewardItems.length > 0) {
+          combat.rewardItems.forEach(item => {
+            addItem(item)
+            addCombatLog(`✨ You gained: ${item.name}`)
+          })
+        }
+
         setCombatEnded(true)
+        setIsSimulating(false)
         setTimeout(() => {
           endCombat()
           if (combat.onVictorySection) {
             goToSection(combat.onVictorySection)
           }
-        }, 2000)
+        }, 3000)
       }
     } else if (enemyAttackStrength > playerAttackStrength) {
       // Enemy wins
@@ -84,6 +114,7 @@ export default function CombatManager({ combat }: CombatManagerProps) {
       if (stats.stamina - 2 <= 0) {
         addCombatLog(`\n💀 You have been defeated...`)
         setCombatEnded(true)
+        setIsSimulating(false)
         setTimeout(() => {
           endCombat()
           if (combat.onDefeatSection) {
@@ -179,12 +210,20 @@ export default function CombatManager({ combat }: CombatManagerProps) {
       {!combatEnded && (
         <div className="flex gap-4">
           <button
-            onClick={fightRound}
-            disabled={playerRoll !== null}
-            className="flex-1 px-6 py-3 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+            onClick={() => setIsSimulating(!isSimulating)}
+            className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
           >
-            Fight Round
+            {isSimulating ? '⏸️ Pause Combat' : '▶️ Resume Combat'}
           </button>
+          {!isSimulating && (
+            <button
+              onClick={fightRound}
+              disabled={playerRoll !== null}
+              className="flex-1 px-6 py-3 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+            >
+              Next Round
+            </button>
+          )}
           {combat.canFlee && (
             <button
               onClick={flee}
