@@ -373,9 +373,52 @@ The trap injures you. Lose 2 STAMINA.
 Your training pays off. Add 1 to your SKILL.
 ```
 
-### Items (JSON Format Only)
+### Items
 
-For item management, use JSON format:
+Items can be automatically detected from text format or explicitly defined in JSON format.
+
+#### Text Format (Auto-Detection)
+
+The converter automatically detects items from your narrative text using these patterns:
+
+```
+Section 1
+
+You find a rusty sword lying on the ground.
+
+Turn to section 2.
+
+Section 2
+
+You discover a healing potion and a golden key.
+
+Turn to section 3.
+
+Section 3
+
+You defeat the goblin and find 50 gold coins. You also gain an enchanted shield.
+
+Turn to section 4.
+```
+
+**Supported patterns:**
+- "you find/discover/gain/obtain/receive/pick up/take/grab/acquire [item]"
+- "[number] gold coins" or "[number] coins"
+- Direct mentions like "a/an/the [adjective] [item-noun]"
+
+**Recognized item types:**
+- **Weapons:** sword, axe, bow, dagger, blade, staff, wand, mace, spear, crossbow
+- **Armor:** shield, helmet, armor, mail, breastplate, gauntlet, boots
+- **Potions:** potion, elixir, tonic, brew
+- **Treasures:** gold, coins, gems, jewels, diamond, ruby, emerald, sapphire
+- **Keys:** key
+- **Other:** ring, amulet, scroll, map, book, rope, torch, lantern
+
+**Supported adjectives:** healing, magic, enchanted, rusty, golden, silver, iron, bronze, steel, ancient, old, new, heavy, light, sharp, dull, bright, dark, mysterious, cursed, blessed, holy
+
+#### JSON Format (Manual Definition)
+
+For precise control over item properties, use JSON format:
 
 ```json
 {
