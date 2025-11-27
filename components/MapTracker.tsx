@@ -9,8 +9,6 @@ export default function MapTracker() {
 
   if (!currentBook) return null
 
-  const visitedList = Array.from(visitedSections)
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -27,7 +25,7 @@ export default function MapTracker() {
 
       <div className="mb-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Sections visited: {visitedSections.size}
+          Sections visited: {visitedSections.length}
         </p>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Current: Section {currentSection}
@@ -37,9 +35,9 @@ export default function MapTracker() {
       {isExpanded && (
         <div className="max-h-96 overflow-y-auto">
           <div className="grid grid-cols-5 gap-2">
-            {visitedList.map(sectionId => (
+            {visitedSections.map((sectionId, index) => (
               <button
-                key={sectionId}
+                key={`${sectionId}-${index}`}
                 onClick={() => goToSection(sectionId)}
                 className={`p-2 rounded-lg text-sm font-semibold transition-colors ${
                   sectionId === currentSection
@@ -55,11 +53,11 @@ export default function MapTracker() {
         </div>
       )}
 
-      {!isExpanded && visitedList.length > 0 && (
+      {!isExpanded && visitedSections.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {visitedList.slice(-10).map(sectionId => (
+          {visitedSections.slice(-10).map((sectionId, index) => (
             <span
-              key={sectionId}
+              key={`${sectionId}-${index}`}
               className={`px-2 py-1 rounded text-xs font-semibold ${
                 sectionId === currentSection
                   ? 'bg-amber-500 text-white'
@@ -69,9 +67,9 @@ export default function MapTracker() {
               {sectionId}
             </span>
           ))}
-          {visitedList.length > 10 && (
+          {visitedSections.length > 10 && (
             <span className="px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
-              +{visitedList.length - 10} more
+              +{visitedSections.length - 10} more
             </span>
           )}
         </div>
@@ -83,8 +81,8 @@ export default function MapTracker() {
           Recent Path:
         </h4>
         <div className="flex items-center gap-1 flex-wrap">
-          {visitedList.slice(-5).map((sectionId, index) => (
-            <div key={sectionId} className="flex items-center">
+          {visitedSections.slice(-5).map((sectionId, index) => (
+            <div key={`path-${sectionId}-${index}`} className="flex items-center">
               <span
                 className={`px-2 py-1 rounded text-xs font-mono ${
                   sectionId === currentSection
@@ -94,7 +92,7 @@ export default function MapTracker() {
               >
                 {sectionId}
               </span>
-              {index < visitedList.slice(-5).length - 1 && (
+              {index < visitedSections.slice(-5).length - 1 && (
                 <span className="mx-1 text-gray-400">→</span>
               )}
             </div>
