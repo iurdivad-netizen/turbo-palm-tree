@@ -313,7 +313,7 @@
             <h2 class="card-title">Input Your Adventure</h2>
             <p class="help-text">
                 Paste your adventure text below or load a file. The formatter will validate the format and show you any issues.
-                <strong>Note:</strong> Section colons are optional - use "Section 1", "Section 1:", or "## SECTION 1", all work! Markdown headers with anchors like "## SECTION 1 {#section-1}" are also supported.
+                <strong>Note:</strong> Section colons are optional - use "Section 1", "Section 1:", or "## SECTION 1", all work! Markdown headers with anchors like "## SECTION 1 {#section-1}" and markdown choice links like "[45](#section-45)" are also supported.
             </p>
 
             <div class="button-group">
@@ -466,13 +466,15 @@ If you want to enter, turn to 2.
                 const title = titleMatch && titleMatch[1].length < 100 ? titleMatch[1].trim() : '';
 
                 // Extract choices
-                const choiceRegex = /(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)/gi;
+                // Matches both traditional format ("turn to 5") and markdown links ("[5](#section-5)")
+                const choiceRegex = /(?:(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)|\[(\d+)\]\([^\)]*\))/gi;
                 const choices = [];
                 let choiceMatch;
 
                 while ((choiceMatch = choiceRegex.exec(content)) !== null) {
+                    const targetSection = parseInt(choiceMatch[1] || choiceMatch[2]);
                     choices.push({
-                        targetSection: parseInt(choiceMatch[1]),
+                        targetSection: targetSection,
                         text: choiceMatch[0],
                     });
                 }
