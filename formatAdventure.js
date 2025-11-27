@@ -59,13 +59,13 @@ function parseMetadata(text) {
 
 function findSections(text) {
   // Matches various section header formats. Colons and punctuation are OPTIONAL.
-  // Supported formats: "Section 1", "Section 1:", "[1]", "(1)", "1.", "**1**", etc.
-  const sectionRegex = /(?:^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
+  // Supported formats: "Section 1", "Section 1:", "## SECTION 1 {#section-1}", "[1]", "(1)", "1.", "**1**", etc.
+  const sectionRegex = /(?:^#+\s*(?:Section|SECTION)\s+(\d+)(?:\s*\{[^}]*\})?|^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
   const sections = [];
   let match;
 
   while ((match = sectionRegex.exec(text)) !== null) {
-    const sectionNum = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6]);
+    const sectionNum = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6] || match[7]);
     sections.push({
       id: sectionNum,
       position: match.index,
@@ -163,7 +163,7 @@ function validateAdventure(filePath) {
 
   // Check sections
   if (parsedSections.length === 0) {
-    issues.push('❌ No sections found! Use format "Section 1" or "Section 1:" or "[1]" or "1." to mark sections');
+    issues.push('❌ No sections found! Use format "Section 1", "Section 1:", "## SECTION 1", "[1]", or "1." to mark sections');
   } else {
     log(`\n✅ Found ${parsedSections.length} sections`, 'green');
   }
@@ -380,8 +380,9 @@ function checkForIssues(filePath) {
 
   // Format recommendations
   log('\n💡 Format Recommendations:', 'blue');
-  log('   ✓ Use consistent section headers (e.g., "Section 1", "Section 1:", or "[1]")', 'blue');
+  log('   ✓ Use consistent section headers (e.g., "Section 1", "Section 1:", "## SECTION 1", or "[1]")', 'blue');
   log('   ✓ Colons are optional: both "Section 1" and "Section 1:" work', 'blue');
+  log('   ✓ Markdown headers work: "## SECTION 1" or "## SECTION 1 {#section-1}"', 'blue');
   log('   ✓ Each section should have 1-4 choices for good gameplay', 'blue');
   log('   ✓ Include at least one ending (section 999 is traditional death)', 'blue');
   log('   ✓ For combat: "ENEMY_NAME SKILL X STAMINA Y"', 'blue');
@@ -407,7 +408,8 @@ function showHelp() {
   log('  Output: .json', 'reset');
   log('\nFormat Guide:', 'bold');
   log('  - Metadata: "Title: Name", "Author: Name", "Initial SKILL: 6"', 'reset');
-  log('  - Sections: "Section 1" or "Section 1:" or "[1]" or "1." (colon optional)', 'reset');
+  log('  - Sections: "Section 1", "Section 1:", "## SECTION 1", "[1]", "1."', 'reset');
+  log('  - Markdown: "## SECTION 1 {#section-1}" (with optional anchor)', 'reset');
   log('  - Choices: "turn to 5" or "go to 10"', 'reset');
   log('  - Combat: "GOBLIN SKILL 6 STAMINA 8"', 'reset');
   log('='.repeat(50) + '\n', 'cyan');
