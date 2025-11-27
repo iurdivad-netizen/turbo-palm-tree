@@ -63,6 +63,11 @@ export default function InventoryDisplay() {
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-800 dark:text-gray-200">
                       {item.name}
+                      {item.quantity && item.quantity > 1 && (
+                        <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-400">
+                          x{item.quantity}
+                        </span>
+                      )}
                     </h4>
                     {item.description && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">

@@ -14,6 +14,7 @@ export interface Item {
   name: string
   description?: string
   type?: 'weapon' | 'armor' | 'potion' | 'treasure' | 'key' | 'other'
+  quantity?: number
 }
 
 export interface Choice {
