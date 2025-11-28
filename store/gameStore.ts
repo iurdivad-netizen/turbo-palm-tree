@@ -1,6 +1,29 @@
 import { create } from 'zustand'
 import { Book, GameState, Item, CharacterStats, Section } from '@/types/game'
 
+// Default starting inventory for Fighting Fantasy adventures
+const DEFAULT_STARTING_ITEMS: Item[] = [
+  {
+    id: 'sword',
+    name: 'Sword',
+    description: 'Your trusty sword',
+    type: 'weapon'
+  },
+  {
+    id: 'shield',
+    name: 'Shield',
+    description: 'A sturdy shield',
+    type: 'armor'
+  },
+  {
+    id: 'rations',
+    name: 'Rations',
+    description: 'Provisions for your journey',
+    type: 'other',
+    quantity: 10
+  }
+]
+
 interface GameStateSnapshot {
   currentSection: number
   stats: CharacterStats | null
@@ -110,7 +133,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       isGameStarted: true,
       stats: initialStats,
-      inventory: currentBook.startingItems || [],
+      inventory: (currentBook.startingItems && currentBook.startingItems.length > 0)
+        ? currentBook.startingItems
+        : DEFAULT_STARTING_ITEMS,
       currentSection: currentBook.startingSection,
       visitedSections: [currentBook.startingSection],
       history: [],
