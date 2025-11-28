@@ -1,9 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Configure PDF.js worker
-// Using legacy mode to avoid CDN and bundling issues
+// Use local worker file to avoid CDN dependencies
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 }
 
 export async function extractTextFromPDF(arrayBuffer: ArrayBuffer): Promise<string> {
