@@ -1,0 +1,42 @@
+Title: Test Adventure with Markdown Links
+Author: Test Author
+Description: Testing markdown link format for choices
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+## SECTION 1 {#section-1}
+
+The Town Square
+
+You arrive in the town square. The evening mist creeps through the cobblestone streets.
+
+Turn to [45](#section-45) to enter the Weeping Willow tavern
+
+Turn to [127](#section-127) to investigate the cemetery
+
+Turn to [234](#section-234) to visit Mayor Hollow's manor
+
+## SECTION 45 {#section-45}
+
+The Weeping Willow Tavern
+
+You push open the heavy wooden door of the tavern. The warmth and chatter inside welcome you.
+
+You have won! You found safety and good company.
+
+## SECTION 127 {#section-127}
+
+The Cemetery
+
+The cemetery gates creak ominously as you enter. Ancient tombstones surround you.
+
+Turn to [234](#section-234) to leave quickly
+
+## SECTION 234 {#section-234}
+
+Mayor Hollow's Manor
+
+The grand manor looms before you. Dark windows stare down like empty eyes.
+
+You have died. The manor held unspeakable horrors.

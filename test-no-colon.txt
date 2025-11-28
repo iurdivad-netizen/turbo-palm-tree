@@ -1,0 +1,29 @@
+Title: Test Adventure Without Colons
+Author: Test Author
+Description: Testing sections without colons
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+Section 0
+Introduction without colon
+
+This is an intro section without a colon after the number.
+
+Section 1
+The Beginning
+
+You stand at the entrance to a dungeon.
+
+If you want to go left, turn to 2.
+If you want to go right, turn to 3.
+
+Section 2
+Left Path
+
+You find treasure! You have won!
+
+Section 3
+Right Path
+
+You fall into a trap. You have died.

@@ -1,0 +1,58 @@
+{
+  "id": "test-adventure-with-markdown-links",
+  "title": "Test Adventure with Markdown Links",
+  "author": "Test Author",
+  "description": "Testing markdown link format for choices",
+  "startingSection": 1,
+  "initialStats": {
+    "skill": 8,
+    "stamina": 20,
+    "luck": 9
+  },
+  "sections": [
+    {
+      "id": 1,
+      "text": "The Town Square\n\nYou arrive in the town square. The evening mist creeps through the cobblestone streets.\n\nTurn to [45](#section-45) to enter the Weeping Willow tavern\n\nTurn to [127](#section-127) to investigate the cemetery\n\nTurn to [234](#section-234) to visit Mayor Hollow's manor",
+      "title": "The Town Square",
+      "choices": [
+        {
+          "text": "[45](#section-45)",
+          "targetSection": 45
+        },
+        {
+          "text": "[127](#section-127)",
+          "targetSection": 127
+        },
+        {
+          "text": "[234](#section-234)",
+          "targetSection": 234
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "text": "The Weeping Willow Tavern\n\nYou push open the heavy wooden door of the tavern. The warmth and chatter inside welcome you.\n\nYou have won! You found safety and good company.",
+      "title": "The Weeping Willow Tavern",
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 127,
+      "text": "The Cemetery\n\nThe cemetery gates creak ominously as you enter. Ancient tombstones surround you.\n\nTurn to [234](#section-234) to leave quickly",
+      "title": "The Cemetery",
+      "choices": [
+        {
+          "text": "[234](#section-234)",
+          "targetSection": 234
+        }
+      ]
+    },
+    {
+      "id": 234,
+      "text": "Mayor Hollow's Manor\n\nThe grand manor looms before you. Dark windows stare down like empty eyes.\n\nYou have died. The manor held unspeakable horrors.",
+      "title": "Mayor Hollow's Manor",
+      "isEnding": true,
+      "endingType": "defeat"
+    }
+  ]
+}
