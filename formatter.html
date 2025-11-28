@@ -315,6 +315,7 @@
                 Paste your adventure text below or load a file. The formatter will validate the format and show you any issues.
                 <strong>Note:</strong> Section colons are optional - use "Section 1", "Section 1:", or "## SECTION 1", all work! Markdown headers with anchors like "## SECTION 1 {#section-1}" and markdown choice links like "[45](#section-45)" are also supported.
                 <strong>Item Detection:</strong> The formatter automatically detects items/loot using 12+ detection patterns including: action verbs ("you find a sword"), containers ("chest contains gems"), locations ("there is a key"), quantities ("3 potions"), stat modifiers ("+2 dagger"), and more!
+                <strong>Combat Detection:</strong> Detects combat using 9+ flexible patterns including: classic format ("DRAGON Skill 12 Stamina 30"), reversed ("Stamina 30 Skill 12"), multi-line, abbreviations ("SK 8 ST 12"), natural language ("fight the Goblin skill 5 stamina 7"), and multiple enemies per section!
             </p>
 
             <div class="button-group">
@@ -641,6 +642,99 @@ If you want to enter, turn to 2.
             return items;
         }
 
+        // Extract combat encounters from content
+        function extractCombat(content) {
+            const combats = [];
+            const processedCombats = new Set();
+
+            function addCombat(enemyName, skill, stamina) {
+                if (!enemyName || !skill || !stamina) return;
+
+                enemyName = enemyName.trim();
+                const combatId = `${enemyName.toLowerCase()}-${skill}-${stamina}`;
+
+                if (processedCombats.has(combatId)) return;
+                processedCombats.add(combatId);
+
+                combats.push({
+                    enemyName: enemyName,
+                    enemySkill: parseInt(skill),
+                    enemyStamina: parseInt(stamina),
+                });
+            }
+
+            // Pattern 1: Classic format - "[ENEMY NAME] SKILL X STAMINA Y" or "SKILL X STAMINA Y"
+            const classicPattern = /([A-Z][A-Z\s'-]+?)?\s*(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            let match;
+            while ((match = classicPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[2], match[3]);
+            }
+
+            // Pattern 2: Reversed format - "STAMINA X SKILL Y"
+            const reversedPattern = /([A-Z][A-Z\s'-]+?)?\s*(?:STAMINA|Stamina|stamina)[\s:]*(\d+)[\s,]+(?:SKILL|Skill|skill)[\s:]*(\d+)/gi;
+            while ((match = reversedPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[3], match[2]);
+            }
+
+            // Pattern 3: Abbreviations - "SK X ST Y" or "S: X, ST: Y"
+            const abbreviatedPattern = /([A-Z][A-Z\s'-]+?)?\s*(?:SK|S)[\s:]*(\d+)[\s,]+(?:ST|STA)[\s:]*(\d+)/gi;
+            while ((match = abbreviatedPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[2], match[3]);
+            }
+
+            // Pattern 4: Natural language - "fight/battle/attack/combat [enemy] (skill X, stamina Y)"
+            const naturalPattern = /(?:fight|battle|attack|combat|defeat|face|encounter)\s+(?:a|an|the)?\s*([A-Z][A-Za-z\s'-]+?)[\s\n]*(?:\(|\[|with|having|stats?:|-)?\s*(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            while ((match = naturalPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 5: Stats first, name after - "SKILL X, STAMINA Y [ENEMY NAME]"
+            const statsFirstPattern = /(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)\s*[:-]?\s*([A-Z][A-Za-z\s'-]+)/gi;
+            while ((match = statsFirstPattern.exec(content)) !== null) {
+                addCombat(match[3].trim(), match[1], match[2]);
+            }
+
+            // Pattern 6: Multi-line format - enemy name on one line, stats on next
+            const lines = content.split('\n');
+            for (let i = 0; i < lines.length - 1; i++) {
+                const currentLine = lines[i].trim();
+                const nextLine = lines[i + 1].trim();
+
+                // Check if current line looks like an enemy name (all caps or title case)
+                if (currentLine.match(/^[A-Z][A-Z\s'-]+$/)) {
+                    // Check if next line has stats
+                    const statsMatch = nextLine.match(/(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/i);
+                    if (statsMatch) {
+                        addCombat(currentLine, statsMatch[1], statsMatch[2]);
+                    }
+                }
+            }
+
+            // Pattern 7: Bullet/list format - "• ENEMY: Skill X, Stamina Y"
+            const bulletPattern = /[•\-*]\s*([A-Z][A-Za-z\s'-]+?)[\s:]+(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            while ((match = bulletPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 8: Table-like format with keywords
+            const tablePattern = /(?:Enemy|Opponent|Creature|Monster)[\s:]*([A-Za-z\s'-]+?)[\s\n]+(?:SKILL|Skill|skill)[\s:]*(\d+)[\s\n]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            while ((match = tablePattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 9: JSON-like format - {"enemy": "NAME", "skill": X, "stamina": Y}
+            const jsonPattern = /["']?enemy["']?\s*:\s*["']([A-Za-z\s'-]+?)["'][\s,]*["']?skill["']?\s*:\s*(\d+)[\s,]*["']?stamina["']?\s*:\s*(\d+)/gi;
+            while ((match = jsonPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Return single combat if only one found, otherwise return array
+            return combats.length === 1 ? combats[0] : (combats.length > 1 ? combats : null);
+        }
+
         // Extract section content
         function extractSectionContent(text, sections) {
             const parsed = [];
@@ -673,16 +767,7 @@ If you want to enter, turn to 2.
                 }
 
                 // Extract combat
-                const combatMatch = content.match(/([A-Z\s]+?)\s+(?:SKILL|Skill)\s+(\d+)(?:,|\s+)(?:STAMINA|Stamina)\s+(\d+)/i);
-                let combat = null;
-
-                if (combatMatch) {
-                    combat = {
-                        enemyName: combatMatch[1].trim(),
-                        enemySkill: parseInt(combatMatch[2]),
-                        enemyStamina: parseInt(combatMatch[3]),
-                    };
-                }
+                const combat = extractCombat(content);
 
                 // Extract items
                 const items = extractItems(content);
@@ -840,11 +925,16 @@ If you want to enter, turn to 2.
             document.getElementById('validation-results').innerHTML = resultsHTML.join('');
 
             // Statistics
+            const totalCombats = sections.reduce((sum, s) => {
+                if (!s.combat) return sum;
+                return sum + (Array.isArray(s.combat) ? s.combat.length : 1);
+            }, 0);
+
             const stats = [
                 { label: 'Total Sections', value: sections.length },
                 { label: 'Starting Stats', value: `${metadata.initialSkill}/${metadata.initialStamina}/${metadata.initialLuck}` },
                 { label: 'Total Choices', value: sections.reduce((sum, s) => sum + s.choices.length, 0) },
-                { label: 'Combat Encounters', value: sections.filter(s => s.combat).length },
+                { label: 'Combat Encounters', value: totalCombats },
                 { label: 'Items Found', value: totalItems },
                 { label: 'Endings', value: sections.filter(s => s.isEnding).length },
             ];
@@ -862,10 +952,23 @@ If you want to enter, turn to 2.
             const previewHTML = sections.map(section => {
                 const preview = section.text.substring(0, 150) + (section.text.length > 150 ? '...' : '');
                 const badges = [];
-                if (section.combat) badges.push('<span class="badge badge-error">⚔️ Combat</span>');
+
+                // Combat badge
+                if (section.combat) {
+                    const combatCount = Array.isArray(section.combat) ? section.combat.length : 1;
+                    badges.push(`<span class="badge badge-error">⚔️ ${combatCount} ${combatCount > 1 ? 'Enemies' : 'Combat'}</span>`);
+                }
+
                 if (section.isEnding) badges.push('<span class="badge badge-success">🏁 Ending</span>');
                 if (section.choices.length === 0 && !section.isEnding) badges.push('<span class="badge badge-warning">⚠️ No Choices</span>');
                 if (section.items && section.items.length > 0) badges.push(`<span class="badge badge-info">🎁 ${section.items.length} Item${section.items.length > 1 ? 's' : ''}</span>`);
+
+                // Combat details
+                let combatHTML = '';
+                if (section.combat) {
+                    const combats = Array.isArray(section.combat) ? section.combat : [section.combat];
+                    combatHTML = `<div class="section-content" style="margin-top: 0.5rem;">⚔️ Combat: ${combats.map(c => `${c.enemyName} (SK: ${c.enemySkill}, ST: ${c.enemyStamina})`).join(', ')}</div>`;
+                }
 
                 return `
                     <div class="section-preview">
@@ -875,6 +978,7 @@ If you want to enter, turn to 2.
                             ${badges.join(' ')}
                         </div>
                         <div class="section-content">${preview}</div>
+                        ${combatHTML}
                         ${section.choices.length > 0 ? `<div class="section-content" style="margin-top: 0.5rem;">→ Links to: ${section.choices.map(c => c.targetSection).join(', ')}</div>` : ''}
                         ${section.items && section.items.length > 0 ? `<div class="section-content" style="margin-top: 0.5rem;">🎁 Items: ${section.items.map(i => `${i.name} (${i.type})`).join(', ')}</div>` : ''}
                     </div>
@@ -929,13 +1033,24 @@ If you want to enter, turn to 2.
                     }
 
                     if (section.combat) {
-                        jsonSection.combat = {
-                            enemyName: section.combat.enemyName,
-                            enemySkill: section.combat.enemySkill,
-                            enemyStamina: section.combat.enemyStamina,
-                            onVictorySection: section.choices[0]?.targetSection || section.id + 1,
-                            onDefeatSection: 999,
-                        };
+                        // Handle both single combat and multiple combats
+                        if (Array.isArray(section.combat)) {
+                            jsonSection.combats = section.combat.map((combat, index) => ({
+                                enemyName: combat.enemyName,
+                                enemySkill: combat.enemySkill,
+                                enemyStamina: combat.enemyStamina,
+                                onVictorySection: index === section.combat.length - 1 ? (section.choices[0]?.targetSection || section.id + 1) : null,
+                                onDefeatSection: 999,
+                            }));
+                        } else {
+                            jsonSection.combat = {
+                                enemyName: section.combat.enemyName,
+                                enemySkill: section.combat.enemySkill,
+                                enemyStamina: section.combat.enemyStamina,
+                                onVictorySection: section.choices[0]?.targetSection || section.id + 1,
+                                onDefeatSection: 999,
+                            };
+                        }
                     }
 
                     if (section.items && section.items.length > 0) {
@@ -1026,7 +1141,7 @@ The Hall
 
 You step inside the dark hallway. The chest in the corner contains: a golden sword, 3 healing potions, and 50 silver coins. You see a magic scroll on the table.
 
-A ghost armed with a cursed dagger appears!
+A GHOST appears! Skill 6, Stamina 8
 
 To fight the ghost, go to 3.
 To run away, turn to 999.
@@ -1047,27 +1162,38 @@ Initial SKILL: 9
 Initial STAMINA: 24
 Initial LUCK: 10
 
-Section 1: The Cave
+Section 1: The Cave Entrance
 
-You enter the dragon's cave. Near the entrance there is a +2 iron shield and a shining helmet. You also spot 2 healing elixirs and a mysterious map. The beast awakens!
+You enter the dragon's cave. Near the entrance there is a +2 iron shield and a shining helmet. You also spot 2 healing elixirs and a mysterious map.
 
-Turn to 2 to face the dragon.
+Two CAVE TROLLS block your path!
+- First Troll: Skill 7, Stamina 9
+- Second Troll: SKILL 8, STAMINA 10
 
-Section 2: The Battle
+If you defeat them, turn to 2.
 
-A mighty DRAGON appears wielding flames and carrying ancient treasures! SKILL 12 STAMINA 30
+Section 2: The Dragon's Lair
 
-The dragon is wearing magical armor and armed with razor-sharp claws!
+A mighty DRAGON emerges from the shadows!
 
-If you defeat the dragon, turn to 10.
+SKILL: 12
+STAMINA: 30
+
+The beast unleashes fire! If you survive, turn to 10.
+
+Section 3: The Guardian Room
+
+You encounter the dragon's guardian. Fight the DARK KNIGHT (skill 10, stamina 14).
+
+If victorious, turn to 10.
 
 Section 10: Victory
 
-You have slain the dragon! The hoard contains: the legendary Dragonbane Sword +3, an enchanted robe, 500 gold coins, 200 platinum coins, 10 rubies, 8 emeralds, the Crown of Kings, and a divine amulet. You have won!
+You have conquered all foes! The hoard contains: the legendary Dragonbane Sword +3, an enchanted robe, 500 gold coins, 200 platinum coins, 10 rubies, 8 emeralds, the Crown of Kings, and a divine amulet. You have won!
 
 Section 999: Defeat
 
-The dragon has defeated you. You have died.`,
+You have been defeated. You have died.`,
 
                 template: `Title: My Adventure
 Author: My Name
