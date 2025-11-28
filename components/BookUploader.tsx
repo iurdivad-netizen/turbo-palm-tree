@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { Book } from '@/types/game'
+import { convertTextToBook } from '@/utils/adventureParser'
 
 export default function BookUploader() {
   const [error, setError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [loading, setLoading] = useState(false)
   const { loadBook, currentBook, startGame } = useGameStore()
 
   const validateBook = (book: any): book is Book => {
@@ -21,24 +23,47 @@ export default function BookUploader() {
 
   const handleFile = async (file: File) => {
     setError(null)
-
-    if (!file.name.endsWith('.json')) {
-      setError('Please upload a JSON file')
-      return
-    }
+    setLoading(true)
 
     try {
-      const text = await file.text()
-      const data = JSON.parse(text)
+      const fileExt = file.name.split('.').pop()?.toLowerCase()
 
-      if (!validateBook(data)) {
-        setError('Invalid book format. Please check the JSON structure.')
+      if (fileExt === 'json') {
+        // Handle JSON files
+        const text = await file.text()
+        const data = JSON.parse(text)
+
+        if (!validateBook(data)) {
+          setError('Invalid book format. Please check the JSON structure.')
+          return
+        }
+
+        loadBook(data)
+      } else if (fileExt === 'txt' || fileExt === 'md') {
+        // Handle TXT and Markdown files
+        const text = await file.text()
+
+        try {
+          const book = convertTextToBook(text)
+
+          if (!validateBook(book)) {
+            setError('Could not parse adventure file. Please check the format.')
+            return
+          }
+
+          loadBook(book)
+        } catch (parseError: any) {
+          setError(`Error parsing adventure: ${parseError.message}`)
+          return
+        }
+      } else {
+        setError('Please upload a JSON, TXT, or MD file')
         return
       }
-
-      loadBook(data)
     } catch (err) {
-      setError('Error parsing JSON file: ' + (err as Error).message)
+      setError('Error reading file: ' + (err as Error).message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -106,7 +131,7 @@ export default function BookUploader() {
             <input
               type="file"
               id="file-upload"
-              accept=".json"
+              accept=".json,.txt,.md"
               onChange={handleChange}
               className="hidden"
             />
@@ -128,9 +153,12 @@ export default function BookUploader() {
                 />
               </svg>
               <span className="text-lg text-gray-700 dark:text-gray-300 mb-2">
-                Drop your adventure JSON file here
+                Drop your adventure file here
               </span>
-              <span className="text-sm text-gray-500">or click to browse</span>
+              <span className="text-sm text-gray-500">
+                Supports JSON, TXT, and Markdown (.md) files
+              </span>
+              <span className="text-xs text-gray-400 mt-1">or click to browse</span>
             </label>
           </div>
 
@@ -142,6 +170,15 @@ export default function BookUploader() {
               Load Example Adventure
             </button>
           </div>
+
+          {loading && (
+            <div className="mt-4 p-4 bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 rounded-lg text-blue-700 dark:text-blue-100 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 dark:border-blue-100"></div>
+                <span>Converting adventure...</span>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mt-4 p-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 rounded-lg text-red-700 dark:text-red-100">
