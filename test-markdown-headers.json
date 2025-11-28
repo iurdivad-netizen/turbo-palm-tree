@@ -1,0 +1,48 @@
+{
+  "id": "test-adventure-with-markdown-headers",
+  "title": "Test Adventure with Markdown Headers",
+  "author": "Test Author",
+  "description": "Testing markdown header format with anchors",
+  "startingSection": 1,
+  "initialStats": {
+    "skill": 8,
+    "stamina": 20,
+    "luck": 9
+  },
+  "sections": [
+    {
+      "id": 0,
+      "text": "Introduction with markdown header and anchor tag.\n\nThis format is commonly used when converting from markdown documents.",
+      "title": "Introduction with markdown header and anchor tag."
+    },
+    {
+      "id": 1,
+      "text": "The Beginning\n\nYou stand at a crossroads.\n\nIf you want to go left, turn to 2.\nIf you want to go right, turn to 3.",
+      "title": "The Beginning",
+      "choices": [
+        {
+          "text": "turn to 2",
+          "targetSection": 2
+        },
+        {
+          "text": "turn to 3",
+          "targetSection": 3
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "text": "Left Path\n\nYou chose the left path and find treasure! You have won!",
+      "title": "Left Path",
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 3,
+      "text": "Right Path (mixed case)\n\nYou chose the right path and encounter danger. You have died.",
+      "title": "Right Path (mixed case)",
+      "isEnding": true,
+      "endingType": "defeat"
+    }
+  ]
+}

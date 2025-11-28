@@ -1,0 +1,48 @@
+{
+  "id": "test-adventure-without-colons",
+  "title": "Test Adventure Without Colons",
+  "author": "Test Author",
+  "description": "Testing sections without colons",
+  "startingSection": 1,
+  "initialStats": {
+    "skill": 8,
+    "stamina": 20,
+    "luck": 9
+  },
+  "sections": [
+    {
+      "id": 0,
+      "text": "Introduction without colon\n\nThis is an intro section without a colon after the number.",
+      "title": "Introduction without colon"
+    },
+    {
+      "id": 1,
+      "text": "The Beginning\n\nYou stand at the entrance to a dungeon.\n\nIf you want to go left, turn to 2.\nIf you want to go right, turn to 3.",
+      "title": "The Beginning",
+      "choices": [
+        {
+          "text": "turn to 2",
+          "targetSection": 2
+        },
+        {
+          "text": "turn to 3",
+          "targetSection": 3
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "text": "Left Path\n\nYou find treasure! You have won!",
+      "title": "Left Path",
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 3,
+      "text": "Right Path\n\nYou fall into a trap. You have died.",
+      "title": "Right Path",
+      "isEnding": true,
+      "endingType": "defeat"
+    }
+  ]
+}

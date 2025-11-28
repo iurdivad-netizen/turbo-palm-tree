@@ -1,0 +1,26 @@
+Title: Mixed Format Test
+Author: Test Author
+Description: Testing both formats with and without colons in same file
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+Section 1
+Start (no colon)
+
+You begin your journey.
+
+If you want to continue, turn to 2.
+
+Section 2: With Colon
+
+This section has a colon in the header.
+
+If you want to proceed, turn to 3.
+
+Section 3
+No Colon Again
+
+Back to no colon format.
+
+You have won!
