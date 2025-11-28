@@ -130,12 +130,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
       initialLuck: currentBook.initialStats.luck,
     }
 
+    // Determine starting inventory - use defaults if not specified or empty
+    const hasValidStartingItems = currentBook.startingItems && currentBook.startingItems.length > 0
+    const startingInventory = hasValidStartingItems ? currentBook.startingItems : DEFAULT_STARTING_ITEMS
+
+    console.log('Starting game with inventory:', {
+      bookHasStartingItems: !!currentBook.startingItems,
+      startingItemsLength: currentBook.startingItems?.length || 0,
+      usingDefaults: !hasValidStartingItems,
+      inventory: startingInventory
+    })
+
     set({
       isGameStarted: true,
       stats: initialStats,
-      inventory: (currentBook.startingItems && currentBook.startingItems.length > 0)
-        ? currentBook.startingItems
-        : DEFAULT_STARTING_ITEMS,
+      inventory: startingInventory,
       currentSection: currentBook.startingSection,
       visitedSections: [currentBook.startingSection],
       history: [],
