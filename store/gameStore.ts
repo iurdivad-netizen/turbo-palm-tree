@@ -133,7 +133,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       isGameStarted: true,
       stats: initialStats,
-      inventory: currentBook.startingItems || DEFAULT_STARTING_ITEMS,
+      inventory: (currentBook.startingItems && currentBook.startingItems.length > 0)
+        ? currentBook.startingItems
+        : DEFAULT_STARTING_ITEMS,
       currentSection: currentBook.startingSection,
       visitedSections: [currentBook.startingSection],
       history: [],
