@@ -56,8 +56,29 @@ export default function BookUploader() {
           setError(`Error parsing adventure: ${parseError.message}`)
           return
         }
+      } else if (fileExt === 'pdf') {
+        // Handle PDF files - use dynamic import to avoid SSR issues
+        try {
+          const arrayBuffer = await file.arrayBuffer()
+
+          // Dynamically import PDF parser only when needed (client-side only)
+          const { extractTextFromPDF } = await import('@/utils/pdfParser')
+          const text = await extractTextFromPDF(arrayBuffer)
+
+          const book = convertTextToBook(text)
+
+          if (!validateBook(book)) {
+            setError('Could not parse adventure from PDF. Please check the format.')
+            return
+          }
+
+          loadBook(book)
+        } catch (pdfError: any) {
+          setError(`Error parsing PDF: ${pdfError.message}`)
+          return
+        }
       } else {
-        setError('Please upload a JSON, TXT, or MD file')
+        setError('Please upload a JSON, TXT, MD, or PDF file')
         return
       }
     } catch (err) {
@@ -131,7 +152,7 @@ export default function BookUploader() {
             <input
               type="file"
               id="file-upload"
-              accept=".json,.txt,.md"
+              accept=".json,.txt,.md,.pdf"
               onChange={handleChange}
               className="hidden"
             />
@@ -156,7 +177,7 @@ export default function BookUploader() {
                 Drop your adventure file here
               </span>
               <span className="text-sm text-gray-500">
-                Supports JSON, TXT, and Markdown (.md) files
+                Supports JSON, TXT, Markdown (.md), and PDF files
               </span>
               <span className="text-xs text-gray-400 mt-1">or click to browse</span>
             </label>
