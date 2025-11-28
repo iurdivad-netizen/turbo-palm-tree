@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adventure Formatter - Gamebook Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(to bottom right, #fffbeb, #fed7aa);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #78350f;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            color: #92400e;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .button-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: #059669;
+        }
+
+        .button-secondary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .button-secondary:hover {
+            background: #2563eb;
+        }
+
+        .button-info {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .button-info:hover {
+            background: #7c3aed;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .results {
+            margin-top: 1rem;
+        }
+
+        .result-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .result-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .info {
+            color: #3b82f6;
+        }
+
+        .result-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid;
+            padding-left: 1rem;
+            background: #f9fafb;
+        }
+
+        .result-item.success {
+            border-color: #10b981;
+        }
+
+        .result-item.error {
+            border-color: #ef4444;
+        }
+
+        .result-item.warning {
+            border-color: #f59e0b;
+        }
+
+        .result-item.info {
+            border-color: #3b82f6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        .json-output {
+            background: #1f2937;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .example-link {
+            color: #3b82f6;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-right: 1rem;
+        }
+
+        .example-link:hover {
+            color: #2563eb;
+        }
+
+        .section-preview {
+            background: #f9fafb;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .section-number {
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .section-content {
+            margin-top: 0.5rem;
+            color: #4b5563;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .help-text {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">📚 Adventure Formatter</h1>
+        <p class="subtitle">Format and validate your gamebook adventures</p>
+
+        <!-- Input Section -->
+        <div class="card">
+            <h2 class="card-title">Input Your Adventure</h2>
+            <p class="help-text">
+                Paste your adventure text below or load a file. The formatter will validate the format and show you any issues.
+                <strong>Note:</strong> Section colons are optional - use "Section 1", "Section 1:", or "## SECTION 1", all work! Markdown headers with anchors like "## SECTION 1 {#section-1}" and markdown choice links like "[45](#section-45)" are also supported.
+            </p>
+
+            <div class="button-group">
+                <div class="file-input-wrapper">
+                    <label for="file-input" class="button button-secondary">📁 Load File</label>
+                    <input type="file" id="file-input" class="file-input" accept=".txt,.md,.json">
+                </div>
+                <button class="button button-primary" onclick="validateAdventure()">✅ Validate</button>
+                <button class="button button-info" onclick="convertToJSON()">🔄 Convert to JSON</button>
+                <button class="button button-secondary" onclick="clearAll()">🗑️ Clear</button>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <span style="font-weight: 600; margin-right: 0.5rem;">Examples:</span>
+                <span class="example-link" onclick="loadExample('simple')">Simple Adventure</span>
+                <span class="example-link" onclick="loadExample('combat')">With Combat</span>
+                <span class="example-link" onclick="loadExample('template')">Empty Template</span>
+            </div>
+
+            <textarea id="adventure-input" placeholder="Title: Your Adventure Name
+Author: Your Name
+Description: A brief description
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+Section 1
+The Beginning
+
+You stand at the entrance...
+
+If you want to enter, turn to 2.
+
+(Note: Colons are optional - both 'Section 1' and 'Section 1:' work!)"></textarea>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-container" class="hidden">
+            <!-- Validation Results -->
+            <div class="card">
+                <h2 class="card-title">
+                    Validation Results
+                    <span id="validation-badge"></span>
+                </h2>
+                <div id="validation-results"></div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card">
+                <h2 class="card-title">Adventure Statistics</h2>
+                <div class="stats-grid" id="stats-grid"></div>
+            </div>
+
+            <!-- Section Preview -->
+            <div class="card">
+                <h2 class="card-title">Section Preview</h2>
+                <div id="section-preview"></div>
+            </div>
+
+            <!-- JSON Output -->
+            <div class="card" id="json-card" class="hidden">
+                <h2 class="card-title">
+                    JSON Output
+                    <button class="button button-secondary" style="float: right;" onclick="downloadJSON()">💾 Download</button>
+                    <button class="button button-info" style="float: right; margin-right: 0.5rem;" onclick="copyJSON()">📋 Copy</button>
+                </h2>
+                <div id="json-output" class="json-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJSON = null;
+
+        // File input handler
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('adventure-input').value = event.target.result;
+            };
+            reader.readAsText(file);
+        });
+
+        // Parse metadata
+        function parseMetadata(text) {
+            const metadata = {
+                title: '',
+                author: '',
+                description: '',
+                initialSkill: 6,
+                initialStamina: 14,
+                initialLuck: 6,
+            };
+
+            const titleMatch = text.match(/(?:Title|TITLE|Adventure):\s*(.+)/i);
+            const authorMatch = text.match(/(?:Author|By):\s*(.+)/i);
+            const descMatch = text.match(/(?:Description|Desc):\s*(.+)/i);
+            const skillMatch = text.match(/(?:Initial\s+)?SKILL:\s*(\d+)/i);
+            const staminaMatch = text.match(/(?:Initial\s+)?STAMINA:\s*(\d+)/i);
+            const luckMatch = text.match(/(?:Initial\s+)?LUCK:\s*(\d+)/i);
+
+            if (titleMatch) metadata.title = titleMatch[1].trim();
+            if (authorMatch) metadata.author = authorMatch[1].trim();
+            if (descMatch) metadata.description = descMatch[1].trim();
+            if (skillMatch) metadata.initialSkill = parseInt(skillMatch[1]);
+            if (staminaMatch) metadata.initialStamina = parseInt(staminaMatch[1]);
+            if (luckMatch) metadata.initialLuck = parseInt(luckMatch[1]);
+
+            return metadata;
+        }
+
+        // Find sections
+        // Matches various section header formats. Colons and punctuation are OPTIONAL.
+        // Supported formats: "Section 1", "Section 1:", "## SECTION 1 {#section-1}", "[1]", "(1)", "1.", "**1**", etc.
+        function findSections(text) {
+            const sectionRegex = /(?:^#+\s*(?:Section|SECTION)\s+(\d+)(?:\s*\{[^}]*\})?|^(?:Section|SECTION)\s+(\d+)\s*(?:\]|:|\.|–|—)?|^\s*\[(\d+)\]|^\s*\((\d+)\)|^(\d+)[\.:]\s|^\s*\*\*(\d+)\*\*|^\s*(\d+)\s*$)/gim;
+            const sections = [];
+            let match;
+
+            while ((match = sectionRegex.exec(text)) !== null) {
+                const sectionNum = parseInt(match[1] || match[2] || match[3] || match[4] || match[5] || match[6] || match[7]);
+                sections.push({
+                    id: sectionNum,
+                    position: match.index,
+                    matchText: match[0],
+                });
+            }
+
+            return sections;
+        }
+
+        // Extract section content
+        function extractSectionContent(text, sections) {
+            const parsed = [];
+
+            for (let i = 0; i < sections.length; i++) {
+                const current = sections[i];
+                const next = sections[i + 1];
+
+                const startPos = current.position + current.matchText.length;
+                const endPos = next ? next.position : text.length;
+                const content = text.substring(startPos, endPos).trim();
+
+                // Extract title
+                const lines = content.split('\n');
+                const titleMatch = lines[0]?.match(/^([^\n]+?)(?:\n|$)/);
+                const title = titleMatch && titleMatch[1].length < 100 ? titleMatch[1].trim() : '';
+
+                // Extract choices
+                // Matches both traditional format ("turn to 5") and markdown links ("[5](#section-5)")
+                const choiceRegex = /(?:(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)|\[(\d+)\]\([^\)]*\))/gi;
+                const choices = [];
+                let choiceMatch;
+
+                while ((choiceMatch = choiceRegex.exec(content)) !== null) {
+                    const targetSection = parseInt(choiceMatch[1] || choiceMatch[2]);
+                    choices.push({
+                        targetSection: targetSection,
+                        text: choiceMatch[0],
+                    });
+                }
+
+                // Extract combat
+                const combatMatch = content.match(/([A-Z\s]+?)\s+(?:SKILL|Skill)\s+(\d+)(?:,|\s+)(?:STAMINA|Stamina)\s+(\d+)/i);
+                let combat = null;
+
+                if (combatMatch) {
+                    combat = {
+                        enemyName: combatMatch[1].trim(),
+                        enemySkill: parseInt(combatMatch[2]),
+                        enemyStamina: parseInt(combatMatch[3]),
+                    };
+                }
+
+                // Check for endings
+                const endingMatch = content.match(/(?:you have won|victory|you have succeeded|the end|you have died|you are dead|game over)/i);
+                const isEnding = current.id === 999 || current.id === 400 || endingMatch !== null;
+
+                parsed.push({
+                    id: current.id,
+                    title,
+                    text: content,
+                    choices,
+                    combat,
+                    isEnding,
+                });
+            }
+
+            return parsed;
+        }
+
+        // Validate adventure
+        function validateAdventure() {
+            const text = document.getElementById('adventure-input').value;
+            if (!text.trim()) {
+                alert('Please enter your adventure text first!');
+                return;
+            }
+
+            const metadata = parseMetadata(text);
+            const sections = findSections(text);
+            const parsedSections = extractSectionContent(text, sections);
+
+            const issues = [];
+            const warnings = [];
+
+            // Check metadata
+            if (!metadata.title) {
+                issues.push('Missing title (add "Title: Your Adventure Name")');
+            }
+
+            if (!metadata.author) {
+                warnings.push('Missing author (optional: add "Author: Your Name")');
+            }
+
+            // Check sections
+            if (parsedSections.length === 0) {
+                issues.push('No sections found! Use format "Section 1", "Section 1:", "## SECTION 1", "[1]", or "1." to mark sections');
+            }
+
+            // Check for section 1
+            const hasSection1 = parsedSections.some(s => s.id === 1);
+            if (!hasSection1 && parsedSections.length > 0) {
+                issues.push('Missing Section 1 (starting section)');
+            }
+
+            // Check for duplicates
+            const sectionIds = parsedSections.map(s => s.id);
+            const duplicates = sectionIds.filter((id, index) => sectionIds.indexOf(id) !== index);
+            if (duplicates.length > 0) {
+                issues.push(`Duplicate sections: ${[...new Set(duplicates)].join(', ')}`);
+            }
+
+            // Validate choice references
+            const allIds = new Set(sectionIds);
+            const unreferencedSections = new Set(sectionIds);
+            const brokenLinks = [];
+
+            parsedSections.forEach(section => {
+                section.choices.forEach(choice => {
+                    unreferencedSections.delete(choice.targetSection);
+                    if (!allIds.has(choice.targetSection) && choice.targetSection !== 999) {
+                        brokenLinks.push(`Section ${section.id} → ${choice.targetSection}`);
+                    }
+                });
+            });
+
+            if (brokenLinks.length > 0) {
+                issues.push(`Broken links: ${brokenLinks.slice(0, 5).join(', ')}${brokenLinks.length > 5 ? ` ... and ${brokenLinks.length - 5} more` : ''}`);
+            }
+
+            // Check unreachable sections
+            const unreachable = [...unreferencedSections].filter(id => id !== 1 && id !== 0);
+            if (unreachable.length > 0) {
+                warnings.push(`Unreachable sections: ${unreachable.slice(0, 5).join(', ')}${unreachable.length > 5 ? ` ... +${unreachable.length - 5} more` : ''}`);
+            }
+
+            // Dead ends
+            const deadEnds = parsedSections.filter(s => s.choices.length === 0 && !s.isEnding);
+            if (deadEnds.length > 0) {
+                warnings.push(`Sections without choices: ${deadEnds.slice(0, 3).map(s => s.id).join(', ')}${deadEnds.length > 3 ? ` ... +${deadEnds.length - 3} more` : ''}`);
+            }
+
+            // Display results
+            displayResults(metadata, parsedSections, issues, warnings);
+        }
+
+        // Display results
+        function displayResults(metadata, sections, issues, warnings) {
+            document.getElementById('results-container').classList.remove('hidden');
+
+            // Validation badge
+            const badge = document.getElementById('validation-badge');
+            if (issues.length === 0) {
+                badge.className = 'badge badge-success';
+                badge.textContent = '✅ Valid';
+            } else {
+                badge.className = 'badge badge-error';
+                badge.textContent = '❌ Invalid';
+            }
+
+            // Validation results
+            const resultsHTML = [];
+
+            if (metadata.title) {
+                resultsHTML.push(`<div class="result-item success">✅ Title: ${metadata.title}</div>`);
+            }
+
+            if (metadata.author) {
+                resultsHTML.push(`<div class="result-item success">✅ Author: ${metadata.author}</div>`);
+            }
+
+            if (sections.length > 0) {
+                resultsHTML.push(`<div class="result-item success">✅ Found ${sections.length} sections</div>`);
+            }
+
+            if (issues.length > 0) {
+                resultsHTML.push('<div class="result-section"><div class="result-title error">❌ Critical Issues:</div>');
+                issues.forEach(issue => {
+                    resultsHTML.push(`<div class="result-item error">${issue}</div>`);
+                });
+                resultsHTML.push('</div>');
+            }
+
+            if (warnings.length > 0) {
+                resultsHTML.push('<div class="result-section"><div class="result-title warning">⚠️ Warnings:</div>');
+                warnings.forEach(warning => {
+                    resultsHTML.push(`<div class="result-item warning">${warning}</div>`);
+                });
+                resultsHTML.push('</div>');
+            }
+
+            if (issues.length === 0) {
+                resultsHTML.push('<div class="result-item success" style="font-size: 1.2rem; font-weight: 600;">✅ VALIDATION PASSED! Your adventure is properly formatted.</div>');
+            }
+
+            document.getElementById('validation-results').innerHTML = resultsHTML.join('');
+
+            // Statistics
+            const stats = [
+                { label: 'Total Sections', value: sections.length },
+                { label: 'Starting Stats', value: `${metadata.initialSkill}/${metadata.initialStamina}/${metadata.initialLuck}` },
+                { label: 'Total Choices', value: sections.reduce((sum, s) => sum + s.choices.length, 0) },
+                { label: 'Combat Encounters', value: sections.filter(s => s.combat).length },
+                { label: 'Endings', value: sections.filter(s => s.isEnding).length },
+            ];
+
+            const statsHTML = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-value">${stat.value}</div>
+                    <div class="stat-label">${stat.label}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('stats-grid').innerHTML = statsHTML;
+
+            // Section preview
+            const previewHTML = sections.slice(0, 10).map(section => {
+                const preview = section.text.substring(0, 150) + (section.text.length > 150 ? '...' : '');
+                const badges = [];
+                if (section.combat) badges.push('<span class="badge badge-error">⚔️ Combat</span>');
+                if (section.isEnding) badges.push('<span class="badge badge-success">🏁 Ending</span>');
+                if (section.choices.length === 0 && !section.isEnding) badges.push('<span class="badge badge-warning">⚠️ No Choices</span>');
+
+                return `
+                    <div class="section-preview">
+                        <div>
+                            <span class="section-number">Section ${section.id}</span>
+                            ${section.title ? `: ${section.title}` : ''}
+                            ${badges.join(' ')}
+                        </div>
+                        <div class="section-content">${preview}</div>
+                        ${section.choices.length > 0 ? `<div class="section-content" style="margin-top: 0.5rem;">→ Links to: ${section.choices.map(c => c.targetSection).join(', ')}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('section-preview').innerHTML = previewHTML +
+                (sections.length > 10 ? `<div class="help-text" style="text-align: center;">... and ${sections.length - 10} more sections</div>` : '');
+        }
+
+        // Convert to JSON
+        function convertToJSON() {
+            const text = document.getElementById('adventure-input').value;
+            if (!text.trim()) {
+                alert('Please enter your adventure text first!');
+                return;
+            }
+
+            const metadata = parseMetadata(text);
+            const sections = findSections(text);
+            const parsedSections = extractSectionContent(text, sections);
+
+            if (!metadata.title) {
+                alert('Please add a title before converting to JSON!');
+                return;
+            }
+
+            // Build JSON
+            currentJSON = {
+                id: metadata.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                title: metadata.title,
+                author: metadata.author,
+                description: metadata.description,
+                startingSection: 1,
+                initialStats: {
+                    skill: metadata.initialSkill,
+                    stamina: metadata.initialStamina,
+                    luck: metadata.initialLuck,
+                },
+                sections: parsedSections.map(section => {
+                    const jsonSection = {
+                        id: section.id,
+                        text: section.text,
+                    };
+
+                    if (section.title) jsonSection.title = section.title;
+
+                    if (section.choices.length > 0) {
+                        jsonSection.choices = section.choices.map(choice => ({
+                            text: choice.text,
+                            targetSection: choice.targetSection,
+                        }));
+                    }
+
+                    if (section.combat) {
+                        jsonSection.combat = {
+                            enemyName: section.combat.enemyName,
+                            enemySkill: section.combat.enemySkill,
+                            enemyStamina: section.combat.enemyStamina,
+                            onVictorySection: section.choices[0]?.targetSection || section.id + 1,
+                            onDefeatSection: 999,
+                        };
+                    }
+
+                    if (section.isEnding) {
+                        jsonSection.isEnding = true;
+                        if (section.id === 999 || section.text.match(/you have died|you are dead|game over/i)) {
+                            jsonSection.endingType = 'defeat';
+                        } else if (section.text.match(/you have won|victory|you have succeeded/i)) {
+                            jsonSection.endingType = 'victory';
+                        } else {
+                            jsonSection.endingType = 'neutral';
+                        }
+                    }
+
+                    return jsonSection;
+                }),
+            };
+
+            // Display JSON
+            document.getElementById('json-card').classList.remove('hidden');
+            document.getElementById('json-output').textContent = JSON.stringify(currentJSON, null, 2);
+
+            // Scroll to JSON
+            document.getElementById('json-card').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Copy JSON
+        function copyJSON() {
+            if (!currentJSON) {
+                alert('Please convert to JSON first!');
+                return;
+            }
+
+            const text = JSON.stringify(currentJSON, null, 2);
+            navigator.clipboard.writeText(text).then(() => {
+                alert('JSON copied to clipboard!');
+            });
+        }
+
+        // Download JSON
+        function downloadJSON() {
+            if (!currentJSON) {
+                alert('Please convert to JSON first!');
+                return;
+            }
+
+            const text = JSON.stringify(currentJSON, null, 2);
+            const blob = new Blob([text], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentJSON.id || 'adventure'}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Clear all
+        function clearAll() {
+            document.getElementById('adventure-input').value = '';
+            document.getElementById('results-container').classList.add('hidden');
+            document.getElementById('json-card').classList.add('hidden');
+            currentJSON = null;
+        }
+
+        // Load examples
+        function loadExample(type) {
+            const examples = {
+                simple: `Title: The Haunted House
+Author: Example Author
+Description: A short adventure in a spooky mansion
+Initial SKILL: 7
+Initial STAMINA: 18
+Initial LUCK: 8
+
+Section 1
+The Entrance
+
+You stand before a creepy old mansion. The door creaks in the wind.
+
+If you want to enter, turn to 2.
+If you want to leave, turn to 999.
+
+Section 2
+The Hall
+
+You step inside. A ghost appears!
+
+To fight the ghost, go to 3.
+To run away, turn to 999.
+
+Section 3
+Victory
+
+You defeat the ghost and find treasure! You have won!
+
+Section 999
+Game Over
+
+You have died. Better luck next time!`,
+
+                combat: `Title: Dragon Slayer
+Author: Example Author
+Initial SKILL: 9
+Initial STAMINA: 24
+Initial LUCK: 10
+
+Section 1: The Cave
+
+You enter the dragon's cave. The beast awakens!
+
+Turn to 2 to face the dragon.
+
+Section 2: The Battle
+
+A mighty DRAGON appears! SKILL 12 STAMINA 30
+
+If you defeat the dragon, turn to 10.
+
+Section 10: Victory
+
+You have slain the dragon! You have won!
+
+Section 999: Defeat
+
+The dragon has defeated you. You have died.`,
+
+                template: `Title: My Adventure
+Author: My Name
+Description: An exciting adventure
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+Section 1: The Start
+
+Your adventure begins here...
+
+Turn to 2 to continue.
+
+Section 999: Game Over
+
+Your adventure ends here.`
+            };
+
+            document.getElementById('adventure-input').value = examples[type] || examples.template;
+        }
+    </script>
+</body>
+</html>
