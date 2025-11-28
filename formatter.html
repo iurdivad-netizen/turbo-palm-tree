@@ -314,7 +314,7 @@
             <p class="help-text">
                 Paste your adventure text below or load a file. The formatter will validate the format and show you any issues.
                 <strong>Note:</strong> Section colons are optional - use "Section 1", "Section 1:", or "## SECTION 1", all work! Markdown headers with anchors like "## SECTION 1 {#section-1}" and markdown choice links like "[45](#section-45)" are also supported.
-                <strong>Item Detection:</strong> The formatter automatically detects items/loot when you use phrases like "you find a sword", "you obtain 100 gold coins", "you discover a key", etc.
+                <strong>Item Detection:</strong> The formatter automatically detects items/loot using 12+ detection patterns including: action verbs ("you find a sword"), containers ("chest contains gems"), locations ("there is a key"), quantities ("3 potions"), stat modifiers ("+2 dagger"), and more!
             </p>
 
             <div class="button-group">
@@ -453,76 +453,54 @@ If you want to enter, turn to 2.
         function extractItems(content) {
             const items = [];
             const itemTypeKeywords = {
-                weapon: ['sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow'],
-                armor: ['shield', 'helmet', 'armor', 'mail', 'breastplate', 'gauntlet', 'boots'],
-                potion: ['potion', 'elixir', 'tonic', 'brew'],
-                treasure: ['gold', 'coins', 'gems', 'treasure', 'jewel', 'jewels', 'diamond', 'ruby', 'emerald', 'loot', 'sapphire'],
-                key: ['key'],
-                other: ['ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern'],
+                weapon: ['sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow', 'knife', 'club', 'hammer', 'flail', 'halberd', 'rapier', 'scimitar', 'katana', 'longsword', 'shortsword', 'broadsword', 'claymore', 'saber', 'cutlass'],
+                armor: ['shield', 'helmet', 'armor', 'armour', 'mail', 'breastplate', 'gauntlet', 'gauntlets', 'boots', 'greaves', 'chainmail', 'platemail', 'cuirass', 'vambraces'],
+                potion: ['potion', 'elixir', 'tonic', 'brew', 'flask', 'vial', 'draught', 'philter'],
+                treasure: ['gold', 'coin', 'coins', 'gem', 'gems', 'treasure', 'jewel', 'jewels', 'diamond', 'diamonds', 'ruby', 'rubies', 'emerald', 'emeralds', 'loot', 'sapphire', 'sapphires', 'pearl', 'pearls', 'silver', 'copper', 'platinum', 'crystal', 'crystals'],
+                key: ['key', 'keys'],
+                other: ['ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern', 'charm', 'talisman', 'orb', 'pendant', 'necklace', 'bracelet', 'cloak', 'robe', 'crown', 'scepter', 'relic', 'artifact', 'horn', 'flute', 'lute', 'mirror', 'compass', 'hourglass', 'chalice', 'goblet', 'medallion'],
             };
 
             const itemNouns = [
-                'sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow',
-                'shield', 'helmet', 'armor', 'mail', 'breastplate', 'gauntlet', 'boots',
-                'potion', 'elixir', 'tonic', 'brew',
-                'key', 'ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern',
-                'treasure', 'loot', 'gems', 'jewels', 'diamond', 'ruby', 'emerald', 'sapphire'
+                'sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow', 'knife', 'club', 'hammer', 'flail', 'halberd', 'rapier', 'scimitar', 'katana', 'longsword', 'shortsword', 'broadsword', 'claymore', 'saber', 'cutlass',
+                'shield', 'helmet', 'armor', 'armour', 'mail', 'breastplate', 'gauntlet', 'gauntlets', 'boots', 'greaves', 'chainmail', 'platemail', 'cuirass', 'vambraces',
+                'potion', 'elixir', 'tonic', 'brew', 'flask', 'vial', 'draught', 'philter',
+                'key', 'keys', 'ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern', 'charm', 'talisman', 'orb', 'pendant', 'necklace', 'bracelet', 'cloak', 'robe', 'crown', 'scepter', 'relic', 'artifact', 'horn', 'flute', 'lute', 'mirror', 'compass', 'hourglass', 'chalice', 'goblet', 'medallion',
+                'treasure', 'loot', 'gem', 'gems', 'jewel', 'jewels', 'diamond', 'diamonds', 'ruby', 'rubies', 'emerald', 'emeralds', 'sapphire', 'sapphires', 'pearl', 'pearls', 'crystal', 'crystals'
             ];
 
             const adjectives = [
-                'healing', 'magic', 'enchanted', 'rusty', 'golden', 'silver', 'iron', 'bronze',
+                'healing', 'magic', 'magical', 'enchanted', 'rusty', 'golden', 'silver', 'iron', 'bronze',
                 'steel', 'ancient', 'old', 'new', 'heavy', 'light', 'sharp', 'dull', 'bright',
-                'dark', 'mysterious', 'cursed', 'blessed', 'holy'
+                'dark', 'mysterious', 'cursed', 'blessed', 'holy', 'sacred', 'divine', 'demonic',
+                'glowing', 'shining', 'shimmering', 'ornate', 'jeweled', 'jewelled', 'decorated',
+                'fine', 'crude', 'worn', 'damaged', 'broken', 'mighty', 'powerful', 'legendary',
+                'rare', 'common', 'unique', 'special', 'valuable', 'precious', 'worthless',
+                'red', 'blue', 'green', 'black', 'white', 'purple', 'crimson', 'azure', 'emerald'
             ];
 
             const processedItems = new Set();
 
-            // Pattern 1: "[number] gold coins"
-            const goldPattern = /(\d+)\s+(?:gold\s+)?coins?/gi;
-            let match;
-            while ((match = goldPattern.exec(content)) !== null) {
-                const count = match[1];
-                const itemId = `${count}-gold-coins`;
-                if (!processedItems.has(itemId)) {
-                    processedItems.add(itemId);
-                    items.push({
-                        id: itemId,
-                        name: `${count} Gold Coins`,
-                        type: 'treasure',
-                    });
-                }
-            }
+            function addItem(itemName, detectedType = null) {
+                if (!itemName || itemName.length < 2) return;
 
-            // Pattern 2: "you [verb] (a/an/the) [adjective?] [item-noun]"
-            const actionVerbs = 'find|discover|gain|obtain|receive|pick\\s+up|take|grab|acquire';
-            const adjectivePattern = `(?:${adjectives.join('|')})?`;
-            const itemPattern = `(?:${itemNouns.join('|')})`;
-
-            const actionItemRegex = new RegExp(
-                `(?:you\\s+(?:${actionVerbs})\\s+(?:a|an|the)?\\s*)` +
-                `(${adjectivePattern}\\s*${itemPattern})`,
-                'gi'
-            );
-
-            while ((match = actionItemRegex.exec(content)) !== null) {
-                let itemName = match[1].trim();
-                if (!itemName) continue;
-
-                itemName = itemName.replace(/\s+/g, ' ');
+                itemName = itemName.replace(/\s+/g, ' ').trim();
                 const itemId = itemName.toLowerCase().replace(/\s+/g, '-');
 
-                if (processedItems.has(itemId)) continue;
+                if (processedItems.has(itemId)) return;
                 processedItems.add(itemId);
 
-                let itemType = 'other';
-                const lowerItemName = itemName.toLowerCase();
-                const words = lowerItemName.split(/\s+/);
-                const lastWord = words[words.length - 1];
+                let itemType = detectedType || 'other';
+                if (!detectedType) {
+                    const lowerItemName = itemName.toLowerCase();
+                    const words = lowerItemName.split(/\s+/);
+                    const lastWord = words[words.length - 1];
 
-                for (const [type, keywords] of Object.entries(itemTypeKeywords)) {
-                    if (keywords.includes(lastWord)) {
-                        itemType = type;
-                        break;
+                    for (const [type, keywords] of Object.entries(itemTypeKeywords)) {
+                        if (keywords.includes(lastWord)) {
+                            itemType = type;
+                            break;
+                        }
                     }
                 }
 
@@ -535,6 +513,128 @@ If you want to enter, turn to 2.
                     id: itemId,
                     name: capitalizedName,
                     type: itemType,
+                });
+            }
+
+            // Pattern 1: "[number] gold/silver/copper coins"
+            const coinsPattern = /(\d+)\s+(?:(gold|silver|copper|platinum)\s+)?coins?/gi;
+            let match;
+            while ((match = coinsPattern.exec(content)) !== null) {
+                const count = match[1];
+                const coinType = match[2] ? match[2].charAt(0).toUpperCase() + match[2].slice(1) : 'Gold';
+                addItem(`${count} ${coinType} Coins`, 'treasure');
+            }
+
+            // Pattern 2: "[number] [item]" (e.g., "3 potions", "5 gems")
+            const quantityPattern = new RegExp(`(\\d+)\\s+(${itemNouns.join('|')})s?`, 'gi');
+            while ((match = quantityPattern.exec(content)) !== null) {
+                const count = match[1];
+                const itemNoun = match[2];
+                if (parseInt(count) > 1) {
+                    addItem(`${count} ${itemNoun}s`);
+                } else {
+                    addItem(`${count} ${itemNoun}`);
+                }
+            }
+
+            // Pattern 3: Action verbs - "you [verb] (a/an/the) [item]"
+            const actionVerbs = 'find|discover|gain|obtain|receive|pick\\s+up|take|grab|acquire|collect|gather|claim|steal|loot|get|won|win';
+            const adjectivePattern = `(?:${adjectives.join('|')}\\s+)*`;
+            const itemPattern = `(${adjectivePattern}(?:${itemNouns.join('|')}))`;
+
+            const actionItemRegex = new RegExp(
+                `(?:you\\s+(?:${actionVerbs})\\s+(?:a|an|the)?\\s*)${itemPattern}`,
+                'gi'
+            );
+
+            while ((match = actionItemRegex.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 4: "there is/are (a/an/the) [item]"
+            const thereIsPattern = new RegExp(
+                `there\\s+(?:is|are)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = thereIsPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 5: "you see (a/an/the) [item]"
+            const youSeePattern = new RegExp(
+                `you\\s+(?:see|spot|notice|observe)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = youSeePattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 6: Container phrases - "contains/holds [item]"
+            const containerPattern = new RegExp(
+                `(?:contain|contains|hold|holds|has|have|hiding|concealing)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = containerPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 7: Location phrases - "on/in/under the [location] is/lies [item]"
+            const locationPattern = new RegExp(
+                `(?:on|in|under|beside|near|behind)\\s+(?:the|a|an)\\s+\\w+\\s+(?:is|lies|sits|rests)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = locationPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 8: "[item] lies/sits/rests [somewhere]"
+            const itemLocationPattern = new RegExp(
+                `(?:a|an|the)?\\s*${itemPattern}\\s+(?:lies|lie|sits|sit|rests|rest)`,
+                'gi'
+            );
+            while ((match = itemLocationPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 9: "armed with/carrying/wielding [item]"
+            const equippedPattern = new RegExp(
+                `(?:armed\\s+with|carrying|wielding|wearing|equipped\\s+with)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = equippedPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 10: "+N [item]" or "[item] +N" (stat modifiers)
+            const statModPattern = new RegExp(
+                `(?:\\+\\d+\\s+${itemPattern}|${itemPattern}\\s+\\+\\d+)`,
+                'gi'
+            );
+            while ((match = statModPattern.exec(content)) !== null) {
+                const itemName = match[1] || match[2];
+                if (itemName) addItem(itemName);
+            }
+
+            // Pattern 11: Capitalized item names (potential proper items)
+            const properNounPattern = new RegExp(
+                `(?:the\\s+)?([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*\\s+(?:${itemNouns.join('|')}))`,
+                'g'
+            );
+            while ((match = properNounPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 12: Items in lists - "find: [item], [item], and [item]"
+            const listPattern = /(?:find|discover|obtain|contains?|holds?|has|have):\s*([^.!?]+)/gi;
+            while ((match = listPattern.exec(content)) !== null) {
+                const listContent = match[1];
+                const listItems = listContent.split(/,|\sand\s/);
+                listItems.forEach(item => {
+                    const trimmed = item.trim().replace(/^(?:a|an|the)\s+/i, '');
+                    const itemMatch = trimmed.match(new RegExp(`(${adjectivePattern}(?:${itemNouns.join('|')}))`, 'i'));
+                    if (itemMatch) {
+                        addItem(itemMatch[1]);
+                    }
                 });
             }
 
@@ -916,7 +1016,7 @@ Initial LUCK: 8
 Section 1
 The Entrance
 
-You stand before a creepy old mansion. The door creaks in the wind. You find a rusty key on the ground.
+You stand before a creepy old mansion. The door creaks in the wind. On the ground lies a rusty key. There is also a wooden torch nearby. You pick up both items.
 
 If you want to enter, turn to 2.
 If you want to leave, turn to 999.
@@ -924,7 +1024,9 @@ If you want to leave, turn to 999.
 Section 2
 The Hall
 
-You step inside and discover a golden sword on the wall. A ghost appears!
+You step inside the dark hallway. The chest in the corner contains: a golden sword, 3 healing potions, and 50 silver coins. You see a magic scroll on the table.
+
+A ghost armed with a cursed dagger appears!
 
 To fight the ghost, go to 3.
 To run away, turn to 999.
@@ -932,7 +1034,7 @@ To run away, turn to 999.
 Section 3
 Victory
 
-You defeat the ghost and find 100 gold coins in a treasure chest! You obtain a magic amulet. You have won!
+You defeat the ghost and it drops a blessed amulet. The treasure room holds 100 gold coins, 5 gems, and the legendary Crystal of Power! You have won!
 
 Section 999
 Game Over
@@ -947,19 +1049,21 @@ Initial LUCK: 10
 
 Section 1: The Cave
 
-You enter the dragon's cave. You pick up an iron shield near the entrance. The beast awakens!
+You enter the dragon's cave. Near the entrance there is a +2 iron shield and a shining helmet. You also spot 2 healing elixirs and a mysterious map. The beast awakens!
 
 Turn to 2 to face the dragon.
 
 Section 2: The Battle
 
-A mighty DRAGON appears! SKILL 12 STAMINA 30
+A mighty DRAGON appears wielding flames and carrying ancient treasures! SKILL 12 STAMINA 30
+
+The dragon is wearing magical armor and armed with razor-sharp claws!
 
 If you defeat the dragon, turn to 10.
 
 Section 10: Victory
 
-You have slain the dragon! You find the legendary enchanted sword and 500 gold coins in the dragon's hoard. You have won!
+You have slain the dragon! The hoard contains: the legendary Dragonbane Sword +3, an enchanted robe, 500 gold coins, 200 platinum coins, 10 rubies, 8 emeralds, the Crown of Kings, and a divine amulet. You have won!
 
 Section 999: Defeat
 
