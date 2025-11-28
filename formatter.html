@@ -314,6 +314,7 @@
             <p class="help-text">
                 Paste your adventure text below or load a file. The formatter will validate the format and show you any issues.
                 <strong>Note:</strong> Section colons are optional - use "Section 1", "Section 1:", or "## SECTION 1", all work! Markdown headers with anchors like "## SECTION 1 {#section-1}" and markdown choice links like "[45](#section-45)" are also supported.
+                <strong>Item Detection:</strong> The formatter automatically detects items/loot when you use phrases like "you find a sword", "you obtain 100 gold coins", "you discover a key", etc.
             </p>
 
             <div class="button-group">
@@ -448,6 +449,98 @@ If you want to enter, turn to 2.
             return sections;
         }
 
+        // Extract items from content
+        function extractItems(content) {
+            const items = [];
+            const itemTypeKeywords = {
+                weapon: ['sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow'],
+                armor: ['shield', 'helmet', 'armor', 'mail', 'breastplate', 'gauntlet', 'boots'],
+                potion: ['potion', 'elixir', 'tonic', 'brew'],
+                treasure: ['gold', 'coins', 'gems', 'treasure', 'jewel', 'jewels', 'diamond', 'ruby', 'emerald', 'loot', 'sapphire'],
+                key: ['key'],
+                other: ['ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern'],
+            };
+
+            const itemNouns = [
+                'sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow',
+                'shield', 'helmet', 'armor', 'mail', 'breastplate', 'gauntlet', 'boots',
+                'potion', 'elixir', 'tonic', 'brew',
+                'key', 'ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern',
+                'treasure', 'loot', 'gems', 'jewels', 'diamond', 'ruby', 'emerald', 'sapphire'
+            ];
+
+            const adjectives = [
+                'healing', 'magic', 'enchanted', 'rusty', 'golden', 'silver', 'iron', 'bronze',
+                'steel', 'ancient', 'old', 'new', 'heavy', 'light', 'sharp', 'dull', 'bright',
+                'dark', 'mysterious', 'cursed', 'blessed', 'holy'
+            ];
+
+            const processedItems = new Set();
+
+            // Pattern 1: "[number] gold coins"
+            const goldPattern = /(\d+)\s+(?:gold\s+)?coins?/gi;
+            let match;
+            while ((match = goldPattern.exec(content)) !== null) {
+                const count = match[1];
+                const itemId = `${count}-gold-coins`;
+                if (!processedItems.has(itemId)) {
+                    processedItems.add(itemId);
+                    items.push({
+                        id: itemId,
+                        name: `${count} Gold Coins`,
+                        type: 'treasure',
+                    });
+                }
+            }
+
+            // Pattern 2: "you [verb] (a/an/the) [adjective?] [item-noun]"
+            const actionVerbs = 'find|discover|gain|obtain|receive|pick\\s+up|take|grab|acquire';
+            const adjectivePattern = `(?:${adjectives.join('|')})?`;
+            const itemPattern = `(?:${itemNouns.join('|')})`;
+
+            const actionItemRegex = new RegExp(
+                `(?:you\\s+(?:${actionVerbs})\\s+(?:a|an|the)?\\s*)` +
+                `(${adjectivePattern}\\s*${itemPattern})`,
+                'gi'
+            );
+
+            while ((match = actionItemRegex.exec(content)) !== null) {
+                let itemName = match[1].trim();
+                if (!itemName) continue;
+
+                itemName = itemName.replace(/\s+/g, ' ');
+                const itemId = itemName.toLowerCase().replace(/\s+/g, '-');
+
+                if (processedItems.has(itemId)) continue;
+                processedItems.add(itemId);
+
+                let itemType = 'other';
+                const lowerItemName = itemName.toLowerCase();
+                const words = lowerItemName.split(/\s+/);
+                const lastWord = words[words.length - 1];
+
+                for (const [type, keywords] of Object.entries(itemTypeKeywords)) {
+                    if (keywords.includes(lastWord)) {
+                        itemType = type;
+                        break;
+                    }
+                }
+
+                const capitalizedName = itemName
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+
+                items.push({
+                    id: itemId,
+                    name: capitalizedName,
+                    type: itemType,
+                });
+            }
+
+            return items;
+        }
+
         // Extract section content
         function extractSectionContent(text, sections) {
             const parsed = [];
@@ -491,6 +584,9 @@ If you want to enter, turn to 2.
                     };
                 }
 
+                // Extract items
+                const items = extractItems(content);
+
                 // Check for endings
                 const endingMatch = content.match(/(?:you have won|victory|you have succeeded|the end|you have died|you are dead|game over)/i);
                 const isEnding = current.id === 999 || current.id === 400 || endingMatch !== null;
@@ -501,6 +597,7 @@ If you want to enter, turn to 2.
                     text: content,
                     choices,
                     combat,
+                    items,
                     isEnding,
                 });
             }
@@ -613,6 +710,13 @@ If you want to enter, turn to 2.
                 resultsHTML.push(`<div class="result-item success">✅ Found ${sections.length} sections</div>`);
             }
 
+            // Check for items
+            const totalItems = sections.reduce((sum, s) => sum + (s.items ? s.items.length : 0), 0);
+            if (totalItems > 0) {
+                const sectionsWithItems = sections.filter(s => s.items && s.items.length > 0).length;
+                resultsHTML.push(`<div class="result-item info">ℹ️ Detected ${totalItems} item${totalItems > 1 ? 's' : ''} across ${sectionsWithItems} section${sectionsWithItems > 1 ? 's' : ''}</div>`);
+            }
+
             if (issues.length > 0) {
                 resultsHTML.push('<div class="result-section"><div class="result-title error">❌ Critical Issues:</div>');
                 issues.forEach(issue => {
@@ -636,11 +740,15 @@ If you want to enter, turn to 2.
             document.getElementById('validation-results').innerHTML = resultsHTML.join('');
 
             // Statistics
+            const totalItems = sections.reduce((sum, s) => sum + (s.items ? s.items.length : 0), 0);
+            const sectionsWithItems = sections.filter(s => s.items && s.items.length > 0).length;
+
             const stats = [
                 { label: 'Total Sections', value: sections.length },
                 { label: 'Starting Stats', value: `${metadata.initialSkill}/${metadata.initialStamina}/${metadata.initialLuck}` },
                 { label: 'Total Choices', value: sections.reduce((sum, s) => sum + s.choices.length, 0) },
                 { label: 'Combat Encounters', value: sections.filter(s => s.combat).length },
+                { label: 'Items Found', value: totalItems },
                 { label: 'Endings', value: sections.filter(s => s.isEnding).length },
             ];
 
@@ -660,6 +768,7 @@ If you want to enter, turn to 2.
                 if (section.combat) badges.push('<span class="badge badge-error">⚔️ Combat</span>');
                 if (section.isEnding) badges.push('<span class="badge badge-success">🏁 Ending</span>');
                 if (section.choices.length === 0 && !section.isEnding) badges.push('<span class="badge badge-warning">⚠️ No Choices</span>');
+                if (section.items && section.items.length > 0) badges.push(`<span class="badge badge-info">🎁 ${section.items.length} Item${section.items.length > 1 ? 's' : ''}</span>`);
 
                 return `
                     <div class="section-preview">
@@ -670,6 +779,7 @@ If you want to enter, turn to 2.
                         </div>
                         <div class="section-content">${preview}</div>
                         ${section.choices.length > 0 ? `<div class="section-content" style="margin-top: 0.5rem;">→ Links to: ${section.choices.map(c => c.targetSection).join(', ')}</div>` : ''}
+                        ${section.items && section.items.length > 0 ? `<div class="section-content" style="margin-top: 0.5rem;">🎁 Items: ${section.items.map(i => `${i.name} (${i.type})`).join(', ')}</div>` : ''}
                     </div>
                 `;
             }).join('');
@@ -729,6 +839,10 @@ If you want to enter, turn to 2.
                             onVictorySection: section.choices[0]?.targetSection || section.id + 1,
                             onDefeatSection: 999,
                         };
+                    }
+
+                    if (section.items && section.items.length > 0) {
+                        jsonSection.addItems = section.items;
                     }
 
                     if (section.isEnding) {
@@ -805,7 +919,7 @@ Initial LUCK: 8
 Section 1
 The Entrance
 
-You stand before a creepy old mansion. The door creaks in the wind.
+You stand before a creepy old mansion. The door creaks in the wind. You find a rusty key on the ground.
 
 If you want to enter, turn to 2.
 If you want to leave, turn to 999.
@@ -813,7 +927,7 @@ If you want to leave, turn to 999.
 Section 2
 The Hall
 
-You step inside. A ghost appears!
+You step inside and discover a golden sword on the wall. A ghost appears!
 
 To fight the ghost, go to 3.
 To run away, turn to 999.
@@ -821,7 +935,7 @@ To run away, turn to 999.
 Section 3
 Victory
 
-You defeat the ghost and find treasure! You have won!
+You defeat the ghost and find 100 gold coins in a treasure chest! You obtain a magic amulet. You have won!
 
 Section 999
 Game Over
@@ -836,7 +950,7 @@ Initial LUCK: 10
 
 Section 1: The Cave
 
-You enter the dragon's cave. The beast awakens!
+You enter the dragon's cave. You pick up an iron shield near the entrance. The beast awakens!
 
 Turn to 2 to face the dragon.
 
@@ -848,7 +962,7 @@ If you defeat the dragon, turn to 10.
 
 Section 10: Victory
 
-You have slain the dragon! You have won!
+You have slain the dragon! You find the legendary enchanted sword and 500 gold coins in the dragon's hoard. You have won!
 
 Section 999: Defeat
 
