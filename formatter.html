@@ -740,9 +740,6 @@ If you want to enter, turn to 2.
             document.getElementById('validation-results').innerHTML = resultsHTML.join('');
 
             // Statistics
-            const totalItems = sections.reduce((sum, s) => sum + (s.items ? s.items.length : 0), 0);
-            const sectionsWithItems = sections.filter(s => s.items && s.items.length > 0).length;
-
             const stats = [
                 { label: 'Total Sections', value: sections.length },
                 { label: 'Starting Stats', value: `${metadata.initialSkill}/${metadata.initialStamina}/${metadata.initialLuck}` },
