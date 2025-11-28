@@ -654,7 +654,7 @@ If you want to enter, turn to 2.
             document.getElementById('stats-grid').innerHTML = statsHTML;
 
             // Section preview
-            const previewHTML = sections.slice(0, 10).map(section => {
+            const previewHTML = sections.map(section => {
                 const preview = section.text.substring(0, 150) + (section.text.length > 150 ? '...' : '');
                 const badges = [];
                 if (section.combat) badges.push('<span class="badge badge-error">⚔️ Combat</span>');
@@ -674,8 +674,7 @@ If you want to enter, turn to 2.
                 `;
             }).join('');
 
-            document.getElementById('section-preview').innerHTML = previewHTML +
-                (sections.length > 10 ? `<div class="help-text" style="text-align: center;">... and ${sections.length - 10} more sections</div>` : '');
+            document.getElementById('section-preview').innerHTML = previewHTML;
         }
 
         // Convert to JSON
