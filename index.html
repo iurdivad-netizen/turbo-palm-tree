@@ -1056,7 +1056,7 @@
             }
         }
 
-        // Extract items from content using 20+ detection patterns
+        // Extract items from content using 26+ detection patterns
         function extractItems(content) {
             const items = [];
             const itemTypeKeywords = {
@@ -1318,10 +1318,75 @@
                 addItem(match[1]);
             }
 
+            // Pattern 21: Multiple items with "and" - "sword and shield", "a key and a map"
+            const multiAndPattern = new RegExp(
+                `(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))\\s+and\\s+(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))`,
+                'gi'
+            );
+            while ((match = multiAndPattern.exec(content)) !== null) {
+                if (match[1]) addItem(match[1]);
+                if (match[2]) addItem(match[2]);
+            }
+
+            // Pattern 22: Three items with "and" - "sword, shield, and helmet"
+            const threeItemsPattern = new RegExp(
+                `(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))\\s*,\\s*(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))\\s*,?\\s*and\\s+(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))`,
+                'gi'
+            );
+            while ((match = threeItemsPattern.exec(content)) !== null) {
+                if (match[1]) addItem(match[1]);
+                if (match[2]) addItem(match[2]);
+                if (match[3]) addItem(match[3]);
+            }
+
+            // Pattern 23: Comma-separated items without "and" - "sword, shield, helmet"
+            const commaListPattern = new RegExp(
+                `(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))\\s*,\\s*(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))`,
+                'gi'
+            );
+            while ((match = commaListPattern.exec(content)) !== null) {
+                if (match[1]) addItem(match[1]);
+                if (match[2]) addItem(match[2]);
+            }
+
+            // Pattern 24: Items with "or" connector - "take the sword or shield"
+            const orPattern = new RegExp(
+                `(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))\\s+or\\s+(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))`,
+                'gi'
+            );
+            while ((match = orPattern.exec(content)) !== null) {
+                if (match[1]) addItem(match[1]);
+                if (match[2]) addItem(match[2]);
+            }
+
+            // Pattern 25: Items separated by slashes - "sword/shield/helmet"
+            const slashPattern = new RegExp(
+                `(${adjectivePattern}(?:${itemNouns.join('|')}))\\s*/\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))`,
+                'gi'
+            );
+            while ((match = slashPattern.exec(content)) !== null) {
+                if (match[1]) addItem(match[1]);
+                if (match[2]) addItem(match[2]);
+            }
+
+            // Pattern 26: Multiple items after action verbs - "you find sword, shield, and potion"
+            const multiActionPattern = new RegExp(
+                `(?:you\\s+(?:${actionVerbs}))\\s+([^.!?]+)`,
+                'gi'
+            );
+            while ((match = multiActionPattern.exec(content)) !== null) {
+                const itemsList = match[1];
+                // Extract all items from this list
+                const itemMatches = itemsList.matchAll(new RegExp(`(?:a|an|the)?\\s*(${adjectivePattern}(?:${itemNouns.join('|')}))`, 'gi'));
+                for (const itemMatch of itemMatches) {
+                    if (itemMatch[1]) addItem(itemMatch[1]);
+                }
+            }
+
             return items;
         }
 
-        // Extract combat encounters from content using 18+ detection patterns
+        // Extract combat encounters from content using 24+ detection patterns
         function extractCombat(content) {
             const combats = [];
             const processedCombats = new Set();
@@ -1474,6 +1539,60 @@
             while ((match = dashPattern.exec(content)) !== null) {
                 const enemyName = match[1] ? match[1].trim() : 'Enemy';
                 addCombat(enemyName, match[2], match[3]);
+            }
+
+            // Pattern 19: Sequential "then/next/after" combats - "Fight Goblin skill 5 stamina 7. Then fight Troll skill 8 stamina 10"
+            const sequentialPattern = /(?:then|next|after(?:wards)?|subsequently)[\s,]+(?:you\s+)?(?:fight|face|battle|encounter)\s+(?:a|an|the)?\s*([A-Za-z\s'-]+?)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)/gi;
+            while ((match = sequentialPattern.exec(content)) !== null) {
+                const enemyName = match[1].trim();
+                const capitalizedName = enemyName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(capitalizedName, match[3], match[5]);
+            }
+
+            // Pattern 20: "First/Second/Third" enemy markers - "First: Goblin skill 5 stamina 7. Second: Troll skill 8 stamina 10"
+            const ordinalPattern = /(?:first|second|third|1st|2nd|3rd)[\s:]+(?:enemy[\s:])?([A-Za-z\s'-]+?)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)/gi;
+            while ((match = ordinalPattern.exec(content)) !== null) {
+                const enemyName = match[1].trim();
+                const capitalizedName = enemyName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(capitalizedName, match[3], match[5]);
+            }
+
+            // Pattern 21: Multiple enemies with "and then" - "Goblin (5/7) and then Troll (8/10)"
+            const andThenPattern = /([A-Za-z\s'-]+?)\s*\((\d+)\/(\d+)\)\s+(?:and\s+)?then\s+([A-Za-z\s'-]+?)\s*\((\d+)\/(\d+)\)/gi;
+            while ((match = andThenPattern.exec(content)) !== null) {
+                const enemy1 = match[1].trim();
+                const enemy2 = match[4].trim();
+                const cap1 = enemy1.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                const cap2 = enemy2.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(cap1, match[2], match[3]);
+                addCombat(cap2, match[5], match[6]);
+            }
+
+            // Pattern 22: Numbered enemy list - "1. Goblin skill 5 stamina 7  2. Troll skill 8 stamina 10"
+            const numberedPattern = /\d+[\.)]\s*([A-Za-z\s'-]+?)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)/gi;
+            while ((match = numberedPattern.exec(content)) !== null) {
+                const enemyName = match[1].trim();
+                const capitalizedName = enemyName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(capitalizedName, match[3], match[5]);
+            }
+
+            // Pattern 23: "Both" enemies - "Fight both: Goblin skill 5 stamina 7 and Troll skill 8 stamina 10"
+            const bothPattern = /both[\s:]+([A-Za-z\s'-]+?)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)\s+and\s+([A-Za-z\s'-]+?)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)/gi;
+            while ((match = bothPattern.exec(content)) !== null) {
+                const enemy1 = match[1].trim();
+                const enemy2 = match[6].trim();
+                const cap1 = enemy1.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                const cap2 = enemy2.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(cap1, match[3], match[5]);
+                addCombat(cap2, match[8], match[10]);
+            }
+
+            // Pattern 24: "Wave" system - "Wave 1: Goblin skill 5 stamina 7  Wave 2: Troll skill 8 stamina 10"
+            const wavePattern = /wave\s+\d+[\s:]+([A-Za-z\s'-]+?)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)/gi;
+            while ((match = wavePattern.exec(content)) !== null) {
+                const enemyName = match[1].trim();
+                const capitalizedName = enemyName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(capitalizedName, match[3], match[5]);
             }
 
             // Return single combat if only one found, otherwise return array
