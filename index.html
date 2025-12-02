@@ -1056,7 +1056,7 @@
             }
         }
 
-        // Extract items from content using 12+ detection patterns
+        // Extract items from content using 20+ detection patterns
         function extractItems(content) {
             const items = [];
             const itemTypeKeywords = {
@@ -1065,7 +1065,7 @@
                 potion: ['potion', 'elixir', 'tonic', 'brew', 'flask', 'vial', 'draught', 'philter'],
                 treasure: ['gold', 'coin', 'coins', 'gem', 'gems', 'treasure', 'jewel', 'jewels', 'diamond', 'diamonds', 'ruby', 'rubies', 'emerald', 'emeralds', 'loot', 'sapphire', 'sapphires', 'pearl', 'pearls', 'silver', 'copper', 'platinum', 'crystal', 'crystals'],
                 key: ['key', 'keys'],
-                other: ['ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern', 'charm', 'talisman', 'orb', 'pendant', 'necklace', 'bracelet', 'cloak', 'robe', 'crown', 'scepter', 'relic', 'artifact', 'horn', 'flute', 'lute', 'mirror', 'compass', 'hourglass', 'chalice', 'goblet', 'medallion'],
+                other: ['ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern', 'charm', 'talisman', 'orb', 'pendant', 'necklace', 'bracelet', 'cloak', 'robe', 'crown', 'scepter', 'relic', 'artifact', 'horn', 'flute', 'lute', 'mirror', 'compass', 'hourglass', 'chalice', 'goblet', 'medallion', 'bread', 'meat', 'cheese', 'food', 'water', 'wine', 'ale', 'rations', 'provisions', 'meal', 'fruit', 'apple', 'berries'],
             };
 
             const itemNouns = [
@@ -1073,7 +1073,8 @@
                 'shield', 'helmet', 'armor', 'armour', 'mail', 'breastplate', 'gauntlet', 'gauntlets', 'boots', 'greaves', 'chainmail', 'platemail', 'cuirass', 'vambraces',
                 'potion', 'elixir', 'tonic', 'brew', 'flask', 'vial', 'draught', 'philter',
                 'key', 'keys', 'ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern', 'charm', 'talisman', 'orb', 'pendant', 'necklace', 'bracelet', 'cloak', 'robe', 'crown', 'scepter', 'relic', 'artifact', 'horn', 'flute', 'lute', 'mirror', 'compass', 'hourglass', 'chalice', 'goblet', 'medallion',
-                'treasure', 'loot', 'gem', 'gems', 'jewel', 'jewels', 'diamond', 'diamonds', 'ruby', 'rubies', 'emerald', 'emeralds', 'sapphire', 'sapphires', 'pearl', 'pearls', 'crystal', 'crystals'
+                'treasure', 'loot', 'gem', 'gems', 'jewel', 'jewels', 'diamond', 'diamonds', 'ruby', 'rubies', 'emerald', 'emeralds', 'sapphire', 'sapphires', 'pearl', 'pearls', 'crystal', 'crystals',
+                'bread', 'meat', 'cheese', 'food', 'water', 'wine', 'ale', 'rations', 'provisions', 'meal', 'fruit', 'apple', 'berries'
             ];
 
             const adjectives = [
@@ -1245,10 +1246,82 @@
                 });
             }
 
+            // Pattern 13: Reward/Prize items - "Reward: [item]" or "Prize: [item]"
+            const rewardPattern = new RegExp(
+                `(?:reward|prize|loot|treasure|gift|bounty)\\s*[:=-]?\\s*(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = rewardPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 14: Possessive forms - "your [item]", "his [item]", "their [item]"
+            const possessivePattern = new RegExp(
+                `(?:your|his|her|their|its|my)\\s+${itemPattern}`,
+                'gi'
+            );
+            while ((match = possessivePattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 15: Short commands - "take [item]", "grab [item]", "use [item]"
+            const shortCommandPattern = new RegExp(
+                `(?:^|\\s)(?:take|grab|use|equip|wield|drink|eat|consume)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gim'
+            );
+            while ((match = shortCommandPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 16: Bullet/list items - "- sword", "* potion", "• key"
+            const bulletItemPattern = new RegExp(
+                `^\\s*[\\-\\*•]\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gim'
+            );
+            while ((match = bulletItemPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 17: Items in parentheses - "(sword)", "(5 gems)"
+            const parenPattern = new RegExp(
+                `\\(\\s*(?:\\d+\\s+)?(?:a|an|the)?\\s*${itemPattern}\\s*\\)`,
+                'gi'
+            );
+            while ((match = parenPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 18: Items with stat values - "sword (damage +2)", "shield (+3 defense)"
+            const statValuePattern = new RegExp(
+                `${itemPattern}\\s*\\([^)]*\\+\\d+[^)]*\\)`,
+                'gi'
+            );
+            while ((match = statValuePattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 19: Items after "have" - "you have [item]"
+            const havePattern = new RegExp(
+                `(?:you\\s+)?have\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = havePattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 20: Items with "offers" or "gives" - "he offers you a sword"
+            const offersPattern = new RegExp(
+                `(?:offer|offers|give|gives|hand|hands|present|presents)\\s+(?:you\\s+)?(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = offersPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
             return items;
         }
 
-        // Extract combat encounters from content using 9+ detection patterns
+        // Extract combat encounters from content using 18+ detection patterns
         function extractCombat(content) {
             const combats = [];
             const processedCombats = new Set();
@@ -1335,6 +1408,72 @@
             const jsonPattern = /["']?enemy["']?\s*:\s*["']([A-Za-z\s'-]+?)["'][\s,]*["']?skill["']?\s*:\s*(\d+)[\s,]*["']?stamina["']?\s*:\s*(\d+)/gi;
             while ((match = jsonPattern.exec(content)) !== null) {
                 addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 10: Lowercase enemy names - "goblin skill 5 stamina 7"
+            const lowercasePattern = /([a-z][a-z\s'-]+?)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)/gi;
+            while ((match = lowercasePattern.exec(content)) !== null) {
+                const enemyName = match[1].trim();
+                // Capitalize first letter of each word
+                const capitalizedName = enemyName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                addCombat(capitalizedName, match[3], match[5]);
+            }
+
+            // Pattern 11: HP instead of STAMINA - "skill 5 HP 10" or "SKILL 5 HP 10"
+            const hpPattern = /([A-Z][A-Za-z\s'-]+?)?\s*(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:HP|hp|Hit\s*Points?)[\s:]*(\d+)/gi;
+            while ((match = hpPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[2], match[3]);
+            }
+
+            // Pattern 12: Ratio format - "Goblin (5/10)" or "Enemy: 5/10"
+            const ratioPattern = /([A-Za-z][A-Za-z\s'-]+?)[\s:]*\(?\s*(\d+)\s*\/\s*(\d+)\s*\)?/gi;
+            while ((match = ratioPattern.exec(content)) !== null) {
+                // Skip if it looks like a date or page number
+                if (match[1].match(/^(page|section|chapter|part|turn|go|move)/i)) continue;
+                const enemyName = match[1].trim();
+                const capitalizedName = enemyName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(capitalizedName, match[2], match[3]);
+            }
+
+            // Pattern 13: Equals format - "skill=5 stamina=10" or "SKILL=5, STAMINA=10"
+            const equalsPattern = /([A-Z][A-Za-z\s'-]+?)?\s*(?:SKILL|Skill|skill)\s*=\s*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)\s*=\s*(\d+)/gi;
+            while ((match = equalsPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[2], match[3]);
+            }
+
+            // Pattern 14: Colon-separated - "Enemy: Goblin Skill: 5 Stamina: 7"
+            const colonPattern = /(?:Enemy|Foe|Opponent|Creature|Monster)[\s:]+([A-Za-z\s'-]+?)[\s\n]+(?:Skill|SKILL|skill)[\s:]+(\d+)[\s\n]+(?:Stamina|STAMINA|stamina)[\s:]+(\d+)/gi;
+            while ((match = colonPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 15: Title case with mixed case stats - "Cave Troll skill 7 stamina 10"
+            const titleCasePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)[\s:]+(skill|SKILL|Skill)[\s:]*(\d+)[\s,]+(stamina|STAMINA|Stamina)[\s:]*(\d+)/g;
+            while ((match = titleCasePattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[3], match[5]);
+            }
+
+            // Pattern 16: Combat with stats in brackets - "Fight [Goblin] [Skill: 5] [Stamina: 7]"
+            const bracketPattern = /(?:fight|battle|face)\s+\[([^\]]+)\]\s*\[(?:skill|SKILL|Skill)[\s:]*(\d+)\]\s*\[(?:stamina|STAMINA|Stamina)[\s:]*(\d+)\]/gi;
+            while ((match = bracketPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 17: Pipe-separated - "Goblin | SKILL 5 | STAMINA 10"
+            const pipePattern = /([A-Za-z][A-Za-z\s'-]+?)\s*\|\s*(?:SKILL|Skill|skill)[\s:]*(\d+)\s*\|\s*(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            while ((match = pipePattern.exec(content)) !== null) {
+                const enemyName = match[1].trim();
+                const capitalizedName = enemyName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                addCombat(capitalizedName, match[2], match[3]);
+            }
+
+            // Pattern 18: Stats with dashes - "SKILL-5 STAMINA-10" or "skill-5, stamina-10"
+            const dashPattern = /([A-Z][A-Za-z\s'-]+?)?\s*(?:SKILL|Skill|skill)\s*-\s*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)\s*-\s*(\d+)/gi;
+            while ((match = dashPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[2], match[3]);
             }
 
             // Return single combat if only one found, otherwise return array
