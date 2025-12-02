@@ -415,6 +415,7 @@
             inCombat: false,
             enemyCurrentStamina: 0,
             combatLog: [],
+            currentCombatIndex: 0,
 
             loadBook(book) {
                 this.currentBook = book;
@@ -463,6 +464,7 @@
                 this.visitedSections.add(sectionId);
                 this.inCombat = false;
                 this.combatLog = [];
+                this.currentCombatIndex = 0;
                 render();
             },
 
@@ -697,38 +699,64 @@
         }
 
         function renderCombatStart(combat) {
-            return `
+            // Handle both single combat and arrays of combats
+            const combats = Array.isArray(combat) ? combat : [combat];
+            const currentCombat = combats[GameState.currentCombatIndex] || combats[0];
+
+            let html = `
                 <div style="background: #fee2e2; border: 2px solid #ef4444; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
                     <h3 style="font-size: 1.5rem; font-weight: bold; color: #dc2626; text-align: center; margin-bottom: 1rem;">
                         ⚔️ Combat Ahead!
-                    </h3>
-                    <p style="text-align: center; font-size: 1.125rem; margin-bottom: 1rem;">
-                        ${combat.enemyName} - SKILL ${combat.enemySkill}, STAMINA ${combat.enemyStamina}
-                    </p>
-                    <button class="button button-danger" style="width: 100%;" onclick="startCombat(${combat.enemyStamina})">
+                    </h3>`;
+
+            // Show all enemies if multiple
+            if (combats.length > 1) {
+                html += `<p style="text-align: center; font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">
+                    Multiple Enemies! Fight them one by one.
+                </p>`;
+                combats.forEach((c, idx) => {
+                    const isCurrent = idx === GameState.currentCombatIndex;
+                    html += `<p style="text-align: center; font-size: 1rem; margin-bottom: 0.5rem; ${isCurrent ? 'font-weight: bold; color: #dc2626;' : 'color: #9ca3af;'}">
+                        ${isCurrent ? '→ ' : ''}${c.enemyName} - SKILL ${c.enemySkill}, STAMINA ${c.enemyStamina}
+                    </p>`;
+                });
+            } else {
+                html += `<p style="text-align: center; font-size: 1.125rem; margin-bottom: 1rem;">
+                    ${currentCombat.enemyName} - SKILL ${currentCombat.enemySkill}, STAMINA ${currentCombat.enemyStamina}
+                </p>`;
+            }
+
+            html += `
+                    <button class="button button-danger" style="width: 100%;" onclick="startCombat(${currentCombat.enemyStamina})">
                         Fight!
                     </button>
                 </div>
             `;
+            return html;
         }
 
         function renderCombat(combat) {
+            // Handle both single combat and arrays of combats
+            const combats = Array.isArray(combat) ? combat : [combat];
+            const currentCombat = combats[GameState.currentCombatIndex] || combats[0];
+
             return `
                 <div style="background: #fee2e2; border: 2px solid #ef4444; padding: 1.5rem; border-radius: 0.5rem; margin-top: 1rem;">
                     <h3 style="font-size: 1.5rem; font-weight: bold; color: #dc2626; text-align: center; margin-bottom: 0.5rem;">
                         ⚔️ Combat!
                     </h3>
+                    ${combats.length > 1 ? `<p style="text-align: center; font-size: 0.875rem; color: #6b7280;">Enemy ${GameState.currentCombatIndex + 1} of ${combats.length}</p>` : ''}
                     <p style="text-align: center; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">
-                        ${combat.enemyName}
+                        ${currentCombat.enemyName}
                     </p>
                     <div class="flex" style="justify-content: center; gap: 2rem; margin-bottom: 1rem;">
                         <div class="text-center">
                             <p style="font-size: 0.875rem; color: #6b7280;">SKILL</p>
-                            <p style="font-size: 1.5rem; font-weight: bold;">${combat.enemySkill}</p>
+                            <p style="font-size: 1.5rem; font-weight: bold;">${currentCombat.enemySkill}</p>
                         </div>
                         <div class="text-center">
                             <p style="font-size: 0.875rem; color: #6b7280;">STAMINA</p>
-                            <p style="font-size: 1.5rem; font-weight: bold; color: ${GameState.enemyCurrentStamina <= combat.enemyStamina / 3 ? '#ef4444' : '#1f2937'};">
+                            <p style="font-size: 1.5rem; font-weight: bold; color: ${GameState.enemyCurrentStamina <= currentCombat.enemyStamina / 3 ? '#ef4444' : '#1f2937'};">
                                 ${GameState.enemyCurrentStamina}
                             </p>
                         </div>
@@ -742,7 +770,7 @@
                         <button class="button button-danger" style="flex: 1;" onclick="fightRound()">
                             Fight Round
                         </button>
-                        ${combat.canFlee ? `<button class="button button-warning" onclick="fleeCombat(${combat.fleeSection})">Flee</button>` : ''}
+                        ${currentCombat.canFlee ? `<button class="button button-warning" onclick="fleeCombat(${currentCombat.fleeSection})">Flee</button>` : ''}
                     </div>
                 </div>
             `;
@@ -1028,6 +1056,291 @@
             }
         }
 
+        // Extract items from content using 12+ detection patterns
+        function extractItems(content) {
+            const items = [];
+            const itemTypeKeywords = {
+                weapon: ['sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow', 'knife', 'club', 'hammer', 'flail', 'halberd', 'rapier', 'scimitar', 'katana', 'longsword', 'shortsword', 'broadsword', 'claymore', 'saber', 'cutlass'],
+                armor: ['shield', 'helmet', 'armor', 'armour', 'mail', 'breastplate', 'gauntlet', 'gauntlets', 'boots', 'greaves', 'chainmail', 'platemail', 'cuirass', 'vambraces'],
+                potion: ['potion', 'elixir', 'tonic', 'brew', 'flask', 'vial', 'draught', 'philter'],
+                treasure: ['gold', 'coin', 'coins', 'gem', 'gems', 'treasure', 'jewel', 'jewels', 'diamond', 'diamonds', 'ruby', 'rubies', 'emerald', 'emeralds', 'loot', 'sapphire', 'sapphires', 'pearl', 'pearls', 'silver', 'copper', 'platinum', 'crystal', 'crystals'],
+                key: ['key', 'keys'],
+                other: ['ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern', 'charm', 'talisman', 'orb', 'pendant', 'necklace', 'bracelet', 'cloak', 'robe', 'crown', 'scepter', 'relic', 'artifact', 'horn', 'flute', 'lute', 'mirror', 'compass', 'hourglass', 'chalice', 'goblet', 'medallion'],
+            };
+
+            const itemNouns = [
+                'sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow', 'knife', 'club', 'hammer', 'flail', 'halberd', 'rapier', 'scimitar', 'katana', 'longsword', 'shortsword', 'broadsword', 'claymore', 'saber', 'cutlass',
+                'shield', 'helmet', 'armor', 'armour', 'mail', 'breastplate', 'gauntlet', 'gauntlets', 'boots', 'greaves', 'chainmail', 'platemail', 'cuirass', 'vambraces',
+                'potion', 'elixir', 'tonic', 'brew', 'flask', 'vial', 'draught', 'philter',
+                'key', 'keys', 'ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern', 'charm', 'talisman', 'orb', 'pendant', 'necklace', 'bracelet', 'cloak', 'robe', 'crown', 'scepter', 'relic', 'artifact', 'horn', 'flute', 'lute', 'mirror', 'compass', 'hourglass', 'chalice', 'goblet', 'medallion',
+                'treasure', 'loot', 'gem', 'gems', 'jewel', 'jewels', 'diamond', 'diamonds', 'ruby', 'rubies', 'emerald', 'emeralds', 'sapphire', 'sapphires', 'pearl', 'pearls', 'crystal', 'crystals'
+            ];
+
+            const adjectives = [
+                'healing', 'magic', 'magical', 'enchanted', 'rusty', 'golden', 'silver', 'iron', 'bronze',
+                'steel', 'ancient', 'old', 'new', 'heavy', 'light', 'sharp', 'dull', 'bright',
+                'dark', 'mysterious', 'cursed', 'blessed', 'holy', 'sacred', 'divine', 'demonic',
+                'glowing', 'shining', 'shimmering', 'ornate', 'jeweled', 'jewelled', 'decorated',
+                'fine', 'crude', 'worn', 'damaged', 'broken', 'mighty', 'powerful', 'legendary',
+                'rare', 'common', 'unique', 'special', 'valuable', 'precious', 'worthless',
+                'red', 'blue', 'green', 'black', 'white', 'purple', 'crimson', 'azure', 'emerald'
+            ];
+
+            const processedItems = new Set();
+
+            function addItem(itemName, detectedType = null) {
+                if (!itemName || itemName.length < 2) return;
+
+                itemName = itemName.replace(/\s+/g, ' ').trim();
+                const itemId = itemName.toLowerCase().replace(/\s+/g, '-');
+
+                if (processedItems.has(itemId)) return;
+                processedItems.add(itemId);
+
+                let itemType = detectedType || 'other';
+                if (!detectedType) {
+                    const lowerItemName = itemName.toLowerCase();
+                    const words = lowerItemName.split(/\s+/);
+                    const lastWord = words[words.length - 1];
+
+                    for (const [type, keywords] of Object.entries(itemTypeKeywords)) {
+                        if (keywords.includes(lastWord)) {
+                            itemType = type;
+                            break;
+                        }
+                    }
+                }
+
+                const capitalizedName = itemName
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+
+                items.push({
+                    id: itemId,
+                    name: capitalizedName,
+                    type: itemType,
+                });
+            }
+
+            // Pattern 1: "[number] gold/silver/copper coins"
+            const coinsPattern = /(\d+)\s+(?:(gold|silver|copper|platinum)\s+)?coins?/gi;
+            let match;
+            while ((match = coinsPattern.exec(content)) !== null) {
+                const count = match[1];
+                const coinType = match[2] ? match[2].charAt(0).toUpperCase() + match[2].slice(1) : 'Gold';
+                addItem(`${count} ${coinType} Coins`, 'treasure');
+            }
+
+            // Pattern 2: "[number] [item]" (e.g., "3 potions", "5 gems")
+            const quantityPattern = new RegExp(`(\\d+)\\s+(${itemNouns.join('|')})s?`, 'gi');
+            while ((match = quantityPattern.exec(content)) !== null) {
+                const count = match[1];
+                const itemNoun = match[2];
+                if (parseInt(count) > 1) {
+                    addItem(`${count} ${itemNoun}s`);
+                } else {
+                    addItem(`${count} ${itemNoun}`);
+                }
+            }
+
+            // Pattern 3: Action verbs - "you [verb] (a/an/the) [item]"
+            const actionVerbs = 'find|discover|gain|obtain|receive|pick\\s+up|take|grab|acquire|collect|gather|claim|steal|loot|get|won|win';
+            const adjectivePattern = `(?:${adjectives.join('|')}\\s+)*`;
+            const itemPattern = `(${adjectivePattern}(?:${itemNouns.join('|')}))`;
+
+            const actionItemRegex = new RegExp(
+                `(?:you\\s+(?:${actionVerbs})\\s+(?:a|an|the)?\\s*)${itemPattern}`,
+                'gi'
+            );
+
+            while ((match = actionItemRegex.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 4: "there is/are (a/an/the) [item]"
+            const thereIsPattern = new RegExp(
+                `there\\s+(?:is|are)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = thereIsPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 5: "you see (a/an/the) [item]"
+            const youSeePattern = new RegExp(
+                `you\\s+(?:see|spot|notice|observe)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = youSeePattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 6: Container phrases - "contains/holds [item]"
+            const containerPattern = new RegExp(
+                `(?:contain|contains|hold|holds|has|have|hiding|concealing)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = containerPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 7: Location phrases - "on/in/under the [location] is/lies [item]"
+            const locationPattern = new RegExp(
+                `(?:on|in|under|beside|near|behind)\\s+(?:the|a|an)\\s+\\w+\\s+(?:is|lies|sits|rests)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = locationPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 8: "[item] lies/sits/rests [somewhere]"
+            const itemLocationPattern = new RegExp(
+                `(?:a|an|the)?\\s*${itemPattern}\\s+(?:lies|lie|sits|sit|rests|rest)`,
+                'gi'
+            );
+            while ((match = itemLocationPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 9: "armed with/carrying/wielding [item]"
+            const equippedPattern = new RegExp(
+                `(?:armed\\s+with|carrying|wielding|wearing|equipped\\s+with)\\s+(?:a|an|the)?\\s*${itemPattern}`,
+                'gi'
+            );
+            while ((match = equippedPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 10: "+N [item]" or "[item] +N" (stat modifiers)
+            const statModPattern = new RegExp(
+                `(?:\\+\\d+\\s+${itemPattern}|${itemPattern}\\s+\\+\\d+)`,
+                'gi'
+            );
+            while ((match = statModPattern.exec(content)) !== null) {
+                const itemName = match[1] || match[2];
+                if (itemName) addItem(itemName);
+            }
+
+            // Pattern 11: Capitalized item names (potential proper items)
+            const properNounPattern = new RegExp(
+                `(?:the\\s+)?([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*\\s+(?:${itemNouns.join('|')}))`,
+                'g'
+            );
+            while ((match = properNounPattern.exec(content)) !== null) {
+                addItem(match[1]);
+            }
+
+            // Pattern 12: Items in lists - "find: [item], [item], and [item]"
+            const listPattern = /(?:find|discover|obtain|contains?|holds?|has|have):\s*([^.!?]+)/gi;
+            while ((match = listPattern.exec(content)) !== null) {
+                const listContent = match[1];
+                const listItems = listContent.split(/,|\sand\s/);
+                listItems.forEach(item => {
+                    const trimmed = item.trim().replace(/^(?:a|an|the)\s+/i, '');
+                    const itemMatch = trimmed.match(new RegExp(`(${adjectivePattern}(?:${itemNouns.join('|')}))`, 'i'));
+                    if (itemMatch) {
+                        addItem(itemMatch[1]);
+                    }
+                });
+            }
+
+            return items;
+        }
+
+        // Extract combat encounters from content using 9+ detection patterns
+        function extractCombat(content) {
+            const combats = [];
+            const processedCombats = new Set();
+
+            function addCombat(enemyName, skill, stamina) {
+                if (!enemyName || !skill || !stamina) return;
+
+                enemyName = enemyName.trim();
+                const combatId = `${enemyName.toLowerCase()}-${skill}-${stamina}`;
+
+                if (processedCombats.has(combatId)) return;
+                processedCombats.add(combatId);
+
+                combats.push({
+                    enemyName: enemyName,
+                    enemySkill: parseInt(skill),
+                    enemyStamina: parseInt(stamina),
+                });
+            }
+
+            // Pattern 1: Classic format - "[ENEMY NAME] SKILL X STAMINA Y" or "SKILL X STAMINA Y"
+            const classicPattern = /([A-Z][A-Z\s'-]+?)?\s*(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            let match;
+            while ((match = classicPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[2], match[3]);
+            }
+
+            // Pattern 2: Reversed format - "STAMINA X SKILL Y"
+            const reversedPattern = /([A-Z][A-Z\s'-]+?)?\s*(?:STAMINA|Stamina|stamina)[\s:]*(\d+)[\s,]+(?:SKILL|Skill|skill)[\s:]*(\d+)/gi;
+            while ((match = reversedPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[3], match[2]);
+            }
+
+            // Pattern 3: Abbreviations - "SK X ST Y" or "S: X, ST: Y"
+            const abbreviatedPattern = /([A-Z][A-Z\s'-]+?)?\s*(?:SK|S)[\s:]*(\d+)[\s,]+(?:ST|STA)[\s:]*(\d+)/gi;
+            while ((match = abbreviatedPattern.exec(content)) !== null) {
+                const enemyName = match[1] ? match[1].trim() : 'Enemy';
+                addCombat(enemyName, match[2], match[3]);
+            }
+
+            // Pattern 4: Natural language - "fight/battle/attack/combat [enemy] (skill X, stamina Y)"
+            const naturalPattern = /(?:fight|battle|attack|combat|defeat|face|encounter)\s+(?:a|an|the)?\s*([A-Z][A-Za-z\s'-]+?)[\s\n]*(?:\(|\[|with|having|stats?:|-)?\s*(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            while ((match = naturalPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 5: Stats first, name after - "SKILL X, STAMINA Y [ENEMY NAME]"
+            const statsFirstPattern = /(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)\s*[:-]?\s*([A-Z][A-Za-z\s'-]+)/gi;
+            while ((match = statsFirstPattern.exec(content)) !== null) {
+                addCombat(match[3].trim(), match[1], match[2]);
+            }
+
+            // Pattern 6: Multi-line format - enemy name on one line, stats on next
+            const lines = content.split('\n');
+            for (let i = 0; i < lines.length - 1; i++) {
+                const currentLine = lines[i].trim();
+                const nextLine = lines[i + 1].trim();
+
+                // Check if current line looks like an enemy name (all caps or title case)
+                if (currentLine.match(/^[A-Z][A-Z\s'-]+$/)) {
+                    // Check if next line has stats
+                    const statsMatch = nextLine.match(/(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/i);
+                    if (statsMatch) {
+                        addCombat(currentLine, statsMatch[1], statsMatch[2]);
+                    }
+                }
+            }
+
+            // Pattern 7: Bullet/list format - "• ENEMY: Skill X, Stamina Y"
+            const bulletPattern = /[•\-*]\s*([A-Z][A-Za-z\s'-]+?)[\s:]+(?:SKILL|Skill|skill)[\s:]*(\d+)[\s,]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            while ((match = bulletPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 8: Table-like format with keywords
+            const tablePattern = /(?:Enemy|Opponent|Creature|Monster)[\s:]*([A-Za-z\s'-]+?)[\s\n]+(?:SKILL|Skill|skill)[\s:]*(\d+)[\s\n]+(?:STAMINA|Stamina|stamina)[\s:]*(\d+)/gi;
+            while ((match = tablePattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Pattern 9: JSON-like format - {"enemy": "NAME", "skill": X, "stamina": Y}
+            const jsonPattern = /["']?enemy["']?\s*:\s*["']([A-Za-z\s'-]+?)["'][\s,]*["']?skill["']?\s*:\s*(\d+)[\s,]*["']?stamina["']?\s*:\s*(\d+)/gi;
+            while ((match = jsonPattern.exec(content)) !== null) {
+                addCombat(match[1].trim(), match[2], match[3]);
+            }
+
+            // Return single combat if only one found, otherwise return array
+            return combats.length === 1 ? combats[0] : (combats.length > 1 ? combats : null);
+        }
+
         function parseTextAdventure(text) {
             // Parse text-based adventure format
             const lines = text.split('\n').map(l => l.trim()).filter(l => l);
@@ -1106,17 +1419,34 @@
                     choices: []
                 };
 
-                // Extract combat encounters
-                const combatMatch = sectionText.match(/(?:SKILL|Skill)\s+(\d+)(?:,|\s+)(?:STAMINA|Stamina)\s+(\d+)/i);
-                if (combatMatch) {
-                    const enemyNameMatch = sectionText.match(/(?:fight|battle|encounter|combat|face)(?:\s+the|\s+a|\s+an)?\s+([A-Z\s]+?)(?=\s+SKILL|\s+Skill|\.|,)/i);
-                    section.combat = {
-                        enemyName: enemyNameMatch ? enemyNameMatch[1].trim() : 'Enemy',
-                        enemySkill: parseInt(combatMatch[1]),
-                        enemyStamina: parseInt(combatMatch[2]),
-                        onVictorySection: current.id + 1,
-                        onDefeatSection: 999
-                    };
+                // Extract combat encounters using comprehensive detection
+                const combat = extractCombat(sectionText);
+                if (combat) {
+                    if (Array.isArray(combat)) {
+                        // Multiple combats found
+                        section.combat = combat.map(c => ({
+                            enemyName: c.enemyName,
+                            enemySkill: c.enemySkill,
+                            enemyStamina: c.enemyStamina,
+                            onVictorySection: current.id + 1,
+                            onDefeatSection: 999
+                        }));
+                    } else {
+                        // Single combat
+                        section.combat = {
+                            enemyName: combat.enemyName,
+                            enemySkill: combat.enemySkill,
+                            enemyStamina: combat.enemyStamina,
+                            onVictorySection: current.id + 1,
+                            onDefeatSection: 999
+                        };
+                    }
+                }
+
+                // Extract items/loot using comprehensive detection
+                const items = extractItems(sectionText);
+                if (items && items.length > 0) {
+                    section.addItems = items;
                 }
 
                 // Extract choices - look for "turn to", "go to", "proceed to" followed by section numbers
@@ -1322,11 +1652,22 @@
         function startCombat(enemyStamina) {
             const section = GameState.currentBook.sections.find(s => s.id === GameState.currentSection);
             GameState.inCombat = true;
+            GameState.currentCombatIndex = 0;
             GameState.enemyCurrentStamina = enemyStamina;
+
+            // Handle both single combat and arrays of combats
+            const combats = Array.isArray(section.combat) ? section.combat : [section.combat];
+            const firstCombat = combats[0];
+
             GameState.combatLog = [
-                `⚔️ Combat begins with ${section.combat.enemyName}!`,
-                `${section.combat.enemyName}: SKILL ${section.combat.enemySkill}, STAMINA ${section.combat.enemyStamina}`
+                `⚔️ Combat begins with ${firstCombat.enemyName}!`,
+                `${firstCombat.enemyName}: SKILL ${firstCombat.enemySkill}, STAMINA ${firstCombat.enemyStamina}`
             ];
+
+            if (combats.length > 1) {
+                GameState.combatLog.push(`⚠️ Warning: ${combats.length} enemies detected! You must defeat them all.`);
+            }
+
             render();
         }
 
@@ -1334,7 +1675,9 @@
             const section = GameState.currentBook.sections.find(s => s.id === GameState.currentSection);
             if (!section || !section.combat || !GameState.stats) return;
 
-            const combat = section.combat;
+            // Handle both single combat and arrays of combats
+            const combats = Array.isArray(section.combat) ? section.combat : [section.combat];
+            const combat = combats[GameState.currentCombatIndex] || combats[0];
 
             // Roll for player
             const playerDice = GameState.rollTwoDice();
@@ -1356,12 +1699,25 @@
 
                 if (GameState.enemyCurrentStamina <= 0) {
                     GameState.combatLog.push(`\n🎉 You defeated ${combat.enemyName}!`);
-                    GameState.inCombat = false;
-                    setTimeout(() => {
-                        if (combat.onVictorySection) {
-                            GameState.goToSection(combat.onVictorySection);
-                        }
-                    }, 2000);
+
+                    // Check if there are more enemies to fight
+                    if (GameState.currentCombatIndex < combats.length - 1) {
+                        // More enemies remaining
+                        GameState.currentCombatIndex++;
+                        const nextEnemy = combats[GameState.currentCombatIndex];
+                        GameState.combatLog.push(`\n⚠️ Another enemy approaches: ${nextEnemy.enemyName}!`);
+                        GameState.enemyCurrentStamina = nextEnemy.enemyStamina;
+                        setTimeout(() => render(), 1500);
+                    } else {
+                        // All enemies defeated
+                        GameState.inCombat = false;
+                        GameState.currentCombatIndex = 0;
+                        setTimeout(() => {
+                            if (combat.onVictorySection) {
+                                GameState.goToSection(combat.onVictorySection);
+                            }
+                        }, 2000);
+                    }
                 }
             } else if (enemyAttackStrength > playerAttackStrength) {
                 // Enemy wins
@@ -1371,6 +1727,7 @@
                 if (GameState.stats.stamina <= 0) {
                     GameState.combatLog.push(`\n💀 You have been defeated...`);
                     GameState.inCombat = false;
+                    GameState.currentCombatIndex = 0;
                     setTimeout(() => {
                         if (combat.onDefeatSection) {
                             GameState.goToSection(combat.onDefeatSection);
