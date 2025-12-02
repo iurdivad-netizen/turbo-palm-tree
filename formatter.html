@@ -331,8 +331,8 @@
             <div style="margin-bottom: 1rem;">
                 <span style="font-weight: 600; margin-right: 0.5rem;">Examples:</span>
                 <span class="example-link" onclick="loadExample('simple')">Simple Adventure</span>
-                <span class="example-link" onclick="loadExample('combat')">With Combat</span>
-                <span class="example-link" onclick="loadExample('template')">Empty Template</span>
+                <span class="example-link" onclick="loadExample('combat')">Advanced Combat</span>
+                <span class="example-link" onclick="loadExample('template')">Full Template (All Features)</span>
             </div>
 
             <textarea id="adventure-input" placeholder="Title: Your Adventure Name
@@ -1195,22 +1195,138 @@ Section 999: Defeat
 
 You have been defeated. You have died.`,
 
-                template: `Title: My Adventure
-Author: My Name
-Description: An exciting adventure
+                template: `Title: The Quest for the Lost Artifact
+Author: Your Name Here
+Description: A comprehensive template demonstrating all adventure features
 Initial SKILL: 8
 Initial STAMINA: 20
 Initial LUCK: 9
 
-Section 1: The Start
+Section 1: The Tavern
+The Beginning
 
-Your adventure begins here...
+You sit in the bustling Golden Dragon tavern. On the wooden table lies a torn map and there is an old compass nearby. The bartender hands you a healing potion.
 
-Turn to 2 to continue.
+An old merchant approaches: "Seek ye the Lost Artifact? Beware the Forest Guardian!"
 
-Section 999: Game Over
+Do you venture to the forest? Turn to 2.
+Or explore the market first? Go to 5.
 
-Your adventure ends here.`
+Section 2: The Dark Forest
+Into Danger
+
+You enter the shadowy forest. You find a rusty sword leaning against a tree and pick up 3 torches from an abandoned camp.
+
+Suddenly, a FOREST TROLL emerges from the bushes!
+SKILL 7, STAMINA 12
+
+If you defeat the troll, turn to 3.
+
+Section 3: The Ancient Ruins
+Discovery
+
+The troll drops a silver key when defeated. You discover a hidden chest containing: 50 gold coins, a magic ring, and an enchanted amulet.
+
+Before the crumbling temple, two STONE GUARDIANS block your path:
+- First Guardian: Skill 6, Stamina 8
+- Second Guardian: SK 7 ST 10
+
+If victorious, proceed to 10.
+If you flee, return to 1.
+
+Section 5: The Market Square
+Shopping and Danger
+
+The bustling market has many wares. You obtain 2 healing elixirs from a friendly merchant and see a +2 iron dagger on display (5 gold coins).
+
+A thief armed with a poisoned blade appears!
+Fight the SNEAKY THIEF (skill 5, stamina 6) - turn to 6 if you win.
+
+Section 6: The Mountain Path
+Climbing Higher
+
+You collect the thief's loot: 20 silver coins and 2 gems. Near the cliff edge, a shining shield +1 rests on a pedestal.
+
+Ahead, the path splits:
+- Climb the steep cliff to the dragon's lair? Turn to 8.
+- Take the safer cave route? Go to 7.
+
+Section 7: The Cave System
+Underground Mysteries
+
+The cave walls contain ancient treasure. The altar holds: a legendary sword, 5 rubies, 100 platinum coins, and the mystical Orb of Power.
+
+A GIANT SPIDER descends!
+Stamina 15, Skill 8
+
+Defeat it to reach section 10.
+
+Section 8: The Dragon's Peak
+The Final Challenge
+
+The mighty ANCIENT DRAGON awaits!
+
+SKILL: 14
+STAMINA: 35
+
+Battle the dragon with all your might!
+
+Victory leads to section 10.
+
+Section 10: The Lost Artifact
+Victory!
+
+You have found the Lost Artifact! It glows with an ethereal light, containing the wisdom of ages.
+
+You obtain: the Legendary Artifact, a crown of kings, 500 gold coins, 10 diamonds, an enchanted robe, and eternal glory!
+
+You have won! The realm celebrates your bravery.
+
+Section 999: Defeat
+Game Over
+
+You have been defeated in your quest. Your adventure ends here in darkness...
+
+Perhaps you will try again another day?
+
+---
+TEMPLATE GUIDE:
+This template demonstrates all detection features:
+
+COMBAT FORMATS SHOWN:
+- Classic: "TROLL SKILL 7, STAMINA 12"
+- Multiple enemies: "- First Guardian: Skill 6, Stamina 8"
+- Abbreviations: "SK 7 ST 10"
+- Natural language: "Fight the THIEF (skill 5, stamina 6)"
+- Reversed: "Stamina 15, Skill 8"
+- Multi-line: Dragon with stats on separate lines
+
+ITEM DETECTION PATTERNS SHOWN:
+- Location: "on the table lies a map"
+- Existence: "there is a compass"
+- Action verbs: "you find a sword", "pick up 3 torches"
+- Containers: "chest containing: coins, ring, amulet"
+- Drops: "troll drops a silver key"
+- Discovery: "you discover a hidden chest"
+- Observation: "you see a dagger"
+- Quantity: "2 healing elixirs", "3 torches"
+- Stat modifiers: "+2 iron dagger", "shining shield +1"
+- Multiple coins: "50 gold coins", "20 silver coins", "100 platinum coins"
+- Equipment: "armed with a poisoned blade"
+- Lists: "contains: sword, rubies, coins, and orb"
+- Collecting: "you collect the loot"
+- Obtaining: "you obtain the Artifact"
+- Proper names: "the Legendary Artifact", "Orb of Power"
+
+FORMATTING FEATURES:
+- Section titles (optional colons)
+- Section subtitles
+- Multiple choices per section
+- Conditional outcomes
+- Victory and defeat endings
+- Comments and notes (like this guide!)
+
+Feel free to modify this template for your own adventure!`
             };
 
             document.getElementById('adventure-input').value = examples[type] || examples.template;
