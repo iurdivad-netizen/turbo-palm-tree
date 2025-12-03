@@ -1056,7 +1056,7 @@
             }
         }
 
-        // Extract items from content using 26+ detection patterns
+        // Extract items from content using 34+ detection patterns (including 8 magic item patterns)
         function extractItems(content) {
             const items = [];
             const itemTypeKeywords = {
@@ -1084,7 +1084,12 @@
                 'glowing', 'shining', 'shimmering', 'ornate', 'jeweled', 'jewelled', 'decorated',
                 'fine', 'crude', 'worn', 'damaged', 'broken', 'mighty', 'powerful', 'legendary',
                 'rare', 'common', 'unique', 'special', 'valuable', 'precious', 'worthless',
-                'red', 'blue', 'green', 'black', 'white', 'purple', 'crimson', 'azure', 'emerald'
+                'red', 'blue', 'green', 'black', 'white', 'purple', 'crimson', 'azure', 'emerald',
+                'fire', 'flame', 'flaming', 'burning', 'blazing', 'ice', 'frozen', 'frost', 'icy',
+                'thunder', 'lightning', 'storm', 'wind', 'earth', 'water', 'shadow', 'light',
+                'blood', 'soul', 'spirit', 'ghost', 'spectral', 'ethereal', 'arcane', 'mystic',
+                'elven', 'dwarven', 'orcish', 'dragon', 'demonic', 'angelic', 'celestial',
+                'vorpal', 'keen', 'defender', 'protector', 'slayer', 'bane', 'doom'
             ];
 
             const processedItems = new Set();
@@ -1381,6 +1386,111 @@
                 for (const itemMatch of itemMatches) {
                     if (itemMatch[1]) addItem(itemMatch[1]);
                 }
+            }
+
+            // MAGIC ITEM PATTERNS - Enhanced detection for magical weapons/shields/items
+
+            // Pattern 27: "Item of [Power]" - "Sword of Fire", "Shield of Light", "Ring of Power"
+            const ofPowerPattern = new RegExp(
+                `(?:the\\s+)?(?:${adjectivePattern})?(${itemNouns.join('|')})\\s+of\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*)`,
+                'g'
+            );
+            while ((match = ofPowerPattern.exec(content)) !== null) {
+                const itemType = match[1];
+                const powerName = match[2];
+                addItem(`${itemType} of ${powerName}`);
+            }
+
+            // Pattern 28: "[Element] Item" - "Fire Sword", "Ice Shield", "Thunder Hammer"
+            const elementalPattern = new RegExp(
+                `(?:the\\s+)?(fire|flame|ice|frost|thunder|lightning|storm|shadow|light|blood|holy|dark|chaos|void|poison|venom)\\s+(${itemNouns.join('|')})`,
+                'gi'
+            );
+            while ((match = elementalPattern.exec(content)) !== null) {
+                const element = match[1];
+                const item = match[2];
+                addItem(`${element} ${item}`);
+            }
+
+            // Pattern 29: "Item +N" or "+N Item" - "Sword +5", "+3 Shield", "Dagger +2"
+            const plusPattern = new RegExp(
+                `(?:(?:the|a|an)\\s+)?(?:(${adjectivePattern})?\\s*)?(${itemNouns.join('|')})\\s*\\+\\s*(\\d+)|\\+\\s*(\\d+)\\s+(${adjectivePattern})?\\s*(${itemNouns.join('|')})`  ,
+                'gi'
+            );
+            while ((match = plusPattern.exec(content)) !== null) {
+                if (match[2]) {
+                    // "Item +N" format
+                    const adj = match[1] ? match[1].trim() + ' ' : '';
+                    const item = match[2];
+                    const bonus = match[3];
+                    addItem(`${adj}${item} +${bonus}`);
+                } else if (match[6]) {
+                    // "+N Item" format
+                    const adj = match[5] ? match[5].trim() + ' ' : '';
+                    const bonus = match[4];
+                    const item = match[6];
+                    addItem(`+${bonus} ${adj}${item}`);
+                }
+            }
+
+            // Pattern 30: Named legendary items (capitalized) - "Excalibur", "Mjolnir", "Stormbringer"
+            // Must be followed by item type or be recognized standalone
+            const legendaryPattern = new RegExp(
+                `(?:the\\s+)?([A-Z][a-z]+(?:'s)?(?:\\s+[A-Z][a-z]+)*)\\s+(${itemNouns.join('|')})|(?:wield|carry|holding|bearing|wielding)\\s+(?:the\\s+)?([A-Z][a-z]+(?:'s)?(?:\\s+[A-Z][a-z]+)*)`,
+                'g'
+            );
+            while ((match = legendaryPattern.exec(content)) !== null) {
+                if (match[1] && match[2]) {
+                    // "Excalibur sword" format
+                    addItem(`${match[1]} ${match[2]}`);
+                } else if (match[3]) {
+                    // "wielding Excalibur" format
+                    addItem(match[3]);
+                }
+            }
+
+            // Pattern 31: "[Race/Type]'s Item" - "Dragon's Sword", "Elf's Bow", "Giant's Shield"
+            const raceItemPattern = new RegExp(
+                `(?:the\\s+)?(?:dragon|elf|elven|dwarf|dwarven|giant|orc|orcish|demon|angel|god|titan|king|queen|wizard|mage|warrior|knight|paladin)(?:'s|s'?)\\s+(${adjectivePattern})?\\s*(${itemNouns.join('|')})`,
+                'gi'
+            );
+            while ((match = raceItemPattern.exec(content)) !== null) {
+                const fullMatch = match[0].replace(/^the\s+/i, '').trim();
+                addItem(fullMatch);
+            }
+
+            // Pattern 32: "[Adjective]blade/[Adjective]bane items - "Flameblade", "Dragonbane", "Frostblade"
+            const compoundMagicPattern = /(?:the\s+)?([a-z]+)(blade|bane|bringer|caller|slayer|reaver|breaker|render)/gi;
+            while ((match = compoundMagicPattern.exec(content)) !== null) {
+                const prefix = match[1];
+                const suffix = match[2];
+                // Only match if prefix looks magical
+                if (prefix.match(/fire|flame|ice|frost|storm|shadow|light|blood|dark|dragon|demon|god|holy|death|soul|spirit/i)) {
+                    addItem(`${prefix}${suffix}`);
+                }
+            }
+
+            // Pattern 33: Items with parenthetical bonuses - "Sword of Light (+3 attack)", "Shield (+5 defense)"
+            const bonusParenPattern = new RegExp(
+                `(?:the\\s+)?(?:${adjectivePattern})?(${itemNouns.join('|')})(?:\\s+of\\s+[A-Z][a-z]+)?\\s*\\([^)]*[+]\\d+[^)]*\\)`,
+                'gi'
+            );
+            while ((match = bonusParenPattern.exec(content)) !== null) {
+                // Extract the full matched text including parenthetical
+                const fullItem = match[0].replace(/^the\s+/i, '').trim();
+                addItem(fullItem);
+            }
+
+            // Pattern 34: "Enchanted/Magical [item]" - specifically catch these even without other patterns
+            const explicitMagicPattern = new RegExp(
+                `(?:the\\s+)?(enchanted|magical|blessed|cursed|holy|sacred|divine|demonic|arcane|mystic|legendary|mythical|ancient)\\s+(${adjectivePattern})?\\s*(${itemNouns.join('|')})`,
+                'gi'
+            );
+            while ((match = explicitMagicPattern.exec(content)) !== null) {
+                const magic = match[1];
+                const adj = match[2] ? match[2].trim() + ' ' : '';
+                const item = match[3];
+                addItem(`${magic} ${adj}${item}`);
             }
 
             return items;
