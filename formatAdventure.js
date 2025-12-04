@@ -76,6 +76,36 @@ function findSections(text) {
   return sections;
 }
 
+function parseCondition(conditionStr) {
+  const conditions = {};
+
+  // Parse skill/stamina/luck conditions: skill>7, stamina>=10, luck<5
+  const statMatch = conditionStr.match(/(skill|stamina|luck)\s*([><=]+)\s*(\d+)/i);
+  if (statMatch) {
+    const stat = statMatch[1].toLowerCase();
+    const operator = statMatch[2];
+    const value = parseInt(statMatch[3]);
+
+    if (operator === '>') {
+      conditions[`requiresMin${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value + 1;
+    } else if (operator === '>=') {
+      conditions[`requiresMin${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value;
+    } else if (operator === '<') {
+      conditions[`requiresMax${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value - 1;
+    } else if (operator === '<=') {
+      conditions[`requiresMax${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value;
+    }
+  }
+
+  // Parse item requirement: hasItem=magic-key
+  const itemMatch = conditionStr.match(/hasItem\s*=\s*([a-z0-9-]+)/i);
+  if (itemMatch) {
+    conditions.requiresItem = itemMatch[1];
+  }
+
+  return Object.keys(conditions).length > 0 ? conditions : undefined;
+}
+
 function extractSectionContent(text, sections) {
   const parsed = [];
 
@@ -93,29 +123,85 @@ function extractSectionContent(text, sections) {
     const title = titleMatch && titleMatch[1].length < 100 ? titleMatch[1].trim() : '';
 
     // Extract choices
-    // Matches both traditional format ("turn to 5") and markdown links ("[5](#section-5)")
-    const choiceRegex = /(?:(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)|\[(\d+)\]\([^\)]*\))/gi;
+    // FIRST: Try marker-based choices
+    const choiceMarkers = parseMarkers(content, 'choice');
     const choices = [];
+
+    for (const marker of choiceMarkers) {
+      const targetSection = parseInt(marker.value);
+      const choice = {
+        targetSection: targetSection,
+        text: marker.attributes.text || marker.value,
+      };
+
+      // Add conditions if present
+      if (marker.attributes.if) {
+        choice.conditions = parseCondition(marker.attributes.if);
+      }
+
+      choices.push(choice);
+    }
+
+    // SECOND: Fall back to pattern detection
+    const choiceRegex = /(?:(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)|\[(\d+)\]\([^\)]*\))/gi;
     let choiceMatch;
 
     while ((choiceMatch = choiceRegex.exec(content)) !== null) {
       const targetSection = parseInt(choiceMatch[1] || choiceMatch[2]);
-      choices.push({
-        targetSection: targetSection,
-        text: choiceMatch[0],
-      });
+      // Avoid duplicates from markers
+      if (!choices.some(c => c.targetSection === targetSection)) {
+        choices.push({
+          targetSection: targetSection,
+          text: choiceMatch[0],
+        });
+      }
     }
 
     // Extract combat
-    const combatMatch = content.match(/([A-Z\s]+?)\s+(?:SKILL|Skill)\s+(\d+)(?:,|\s+)(?:STAMINA|Stamina)\s+(\d+)/i);
+    // FIRST: Try marker-based combat
+    const combatMarkers = parseMarkers(content, 'combat');
     let combat = null;
 
-    if (combatMatch) {
-      combat = {
-        enemyName: combatMatch[1].trim(),
-        enemySkill: parseInt(combatMatch[2]),
-        enemyStamina: parseInt(combatMatch[3]),
-      };
+    if (combatMarkers.length > 0) {
+      // Support multiple enemies
+      const combatArray = combatMarkers.map(marker => {
+        const combatData = {
+          enemyName: marker.value,
+          enemySkill: parseInt(marker.attributes.skill),
+          enemyStamina: parseInt(marker.attributes.stamina),
+        };
+
+        // Optional attributes
+        if (marker.attributes.onVictory) {
+          combatData.onVictorySection = parseInt(marker.attributes.onVictory);
+        }
+        if (marker.attributes.onDefeat) {
+          combatData.onDefeatSection = parseInt(marker.attributes.onDefeat);
+        }
+        if (marker.attributes.canFlee === 'true') {
+          combatData.canFlee = true;
+          if (marker.attributes.fleeSection) {
+            combatData.fleeSection = parseInt(marker.attributes.fleeSection);
+          }
+        }
+
+        return combatData;
+      });
+
+      combat = combatArray.length === 1 ? combatArray[0] : combatArray;
+    }
+
+    // SECOND: Fall back to pattern detection if no marker combat found
+    if (!combat) {
+      const combatMatch = content.match(/([A-Z\s]+?)\s+(?:SKILL|Skill)\s+(\d+)(?:,|\s+)(?:STAMINA|Stamina)\s+(\d+)/i);
+
+      if (combatMatch) {
+        combat = {
+          enemyName: combatMatch[1].trim(),
+          enemySkill: parseInt(combatMatch[2]),
+          enemyStamina: parseInt(combatMatch[3]),
+        };
+      }
     }
 
     // Extract items
@@ -140,9 +226,119 @@ function extractSectionContent(text, sections) {
   return parsed;
 }
 
+function parseMarkers(content, type) {
+  const results = [];
+
+  // Marker format: {type: data | attr=value | attr=value}
+  const markerRegex = new RegExp(`\\{(${type}):\\s*([^}]+)\\}`, 'gi');
+  let match;
+
+  while ((match = markerRegex.exec(content)) !== null) {
+    const markerType = match[1].toLowerCase();
+    const markerData = match[2];
+
+    // Parse attributes separated by |
+    const parts = markerData.split('|').map(p => p.trim());
+    const mainValue = parts[0];
+    const attributes = {};
+
+    // Parse key=value attributes
+    for (let i = 1; i < parts.length; i++) {
+      const attrMatch = parts[i].match(/^(\w+)=(.+)$/);
+      if (attrMatch) {
+        attributes[attrMatch[1].trim()] = attrMatch[2].trim();
+      } else {
+        // If no =, treat as description or text
+        attributes.text = parts[i];
+      }
+    }
+
+    results.push({
+      type: markerType,
+      value: mainValue,
+      attributes,
+      fullMatch: match[0],
+      index: match.index,
+    });
+  }
+
+  return results;
+}
+
+function extractItemsFromMarkers(content) {
+  const items = [];
+  const processedItems = new Set();
+
+  // Extract {item:...}, {loot:...}, and {treasure:...} markers
+  const itemMarkers = parseMarkers(content, 'item|loot|treasure');
+
+  for (const marker of itemMarkers) {
+    const itemName = marker.value;
+    const itemId = itemName.toLowerCase().replace(/\s+/g, '-');
+
+    if (processedItems.has(itemId)) continue;
+    processedItems.add(itemId);
+
+    // Determine type from marker attributes or marker type
+    let itemType = marker.attributes.type || 'other';
+    if (marker.type === 'treasure') {
+      itemType = 'treasure';
+    } else if (marker.type === 'loot' && !marker.attributes.type) {
+      itemType = 'other';
+    }
+
+    // Auto-detect type from item name if not specified
+    if (!marker.attributes.type || itemType === 'other') {
+      const lowerName = itemName.toLowerCase();
+      if (lowerName.includes('sword') || lowerName.includes('axe') || lowerName.includes('bow') ||
+          lowerName.includes('dagger') || lowerName.includes('weapon')) {
+        itemType = 'weapon';
+      } else if (lowerName.includes('shield') || lowerName.includes('armor') || lowerName.includes('helmet')) {
+        itemType = 'armor';
+      } else if (lowerName.includes('potion') || lowerName.includes('elixir')) {
+        itemType = 'potion';
+      } else if (lowerName.includes('key')) {
+        itemType = 'key';
+      } else if (lowerName.includes('gold') || lowerName.includes('coin') || lowerName.includes('gem') ||
+                 lowerName.includes('treasure')) {
+        itemType = 'treasure';
+      }
+    }
+
+    // Capitalize item name
+    const capitalizedName = itemName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+    const item = {
+      id: itemId,
+      name: capitalizedName,
+      type: itemType,
+    };
+
+    // Add bonus/restore if specified
+    if (marker.attributes.bonus) {
+      item.bonus = marker.attributes.bonus;
+    }
+    if (marker.attributes.restore) {
+      item.restore = marker.attributes.restore;
+    }
+
+    items.push(item);
+  }
+
+  return items;
+}
+
 function extractItems(content) {
   const items = [];
 
+  // FIRST: Try to extract items from markers (highest priority)
+  const markerItems = extractItemsFromMarkers(content);
+  items.push(...markerItems);
+
+  // SECOND: Fall back to pattern detection for unmarked items
   // Define item keywords for better detection
   const itemNouns = [
     'sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow',
@@ -167,7 +363,8 @@ function extractItems(content) {
     other: ['ring', 'amulet', 'scroll', 'map', 'book', 'rope', 'torch', 'lantern'],
   };
 
-  const processedItems = new Set();
+  // Track already-processed items (including those from markers)
+  const processedItems = new Set(markerItems.map(item => item.id));
 
   // Pattern 1: "[number] gold coins" or "[number] coins"
   const goldPattern = /(\d+)\s+(?:gold\s+)?coins?/gi;

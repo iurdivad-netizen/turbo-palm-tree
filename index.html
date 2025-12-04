@@ -1056,9 +1056,139 @@
             }
         }
 
+        // Parse markers from content
+        function parseMarkers(content, type) {
+            const results = [];
+            const markerRegex = new RegExp(`\\{(${type}):\\s*([^}]+)\\}`, 'gi');
+            let match;
+
+            while ((match = markerRegex.exec(content)) !== null) {
+                const markerType = match[1].toLowerCase();
+                const markerData = match[2];
+
+                const parts = markerData.split('|').map(p => p.trim());
+                const mainValue = parts[0];
+                const attributes = {};
+
+                for (let i = 1; i < parts.length; i++) {
+                    const attrMatch = parts[i].match(/^(\w+)=(.+)$/);
+                    if (attrMatch) {
+                        attributes[attrMatch[1].trim()] = attrMatch[2].trim();
+                    } else {
+                        attributes.text = parts[i];
+                    }
+                }
+
+                results.push({
+                    type: markerType,
+                    value: mainValue,
+                    attributes,
+                    fullMatch: match[0],
+                    index: match.index,
+                });
+            }
+
+            return results;
+        }
+
+        // Parse condition string for choices
+        function parseCondition(conditionStr) {
+            const conditions = {};
+
+            const statMatch = conditionStr.match(/(skill|stamina|luck)\s*([><=]+)\s*(\d+)/i);
+            if (statMatch) {
+                const stat = statMatch[1].toLowerCase();
+                const operator = statMatch[2];
+                const value = parseInt(statMatch[3]);
+
+                if (operator === '>') {
+                    conditions[`requiresMin${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value + 1;
+                } else if (operator === '>=') {
+                    conditions[`requiresMin${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value;
+                } else if (operator === '<') {
+                    conditions[`requiresMax${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value - 1;
+                } else if (operator === '<=') {
+                    conditions[`requiresMax${stat.charAt(0).toUpperCase() + stat.slice(1)}`] = value;
+                }
+            }
+
+            const itemMatch = conditionStr.match(/hasItem\s*=\s*([a-z0-9-]+)/i);
+            if (itemMatch) {
+                conditions.requiresItem = itemMatch[1];
+            }
+
+            return Object.keys(conditions).length > 0 ? conditions : undefined;
+        }
+
+        // Extract items from markers (highest priority)
+        function extractItemsFromMarkers(content) {
+            const items = [];
+            const processedItems = new Set();
+            const itemMarkers = parseMarkers(content, 'item|loot|treasure');
+
+            for (const marker of itemMarkers) {
+                const itemName = marker.value;
+                const itemId = itemName.toLowerCase().replace(/\s+/g, '-');
+
+                if (processedItems.has(itemId)) continue;
+                processedItems.add(itemId);
+
+                let itemType = marker.attributes.type || 'other';
+                if (marker.type === 'treasure') {
+                    itemType = 'treasure';
+                } else if (marker.type === 'loot' && !marker.attributes.type) {
+                    itemType = 'other';
+                }
+
+                if (!marker.attributes.type || itemType === 'other') {
+                    const lowerName = itemName.toLowerCase();
+                    if (lowerName.includes('sword') || lowerName.includes('axe') || lowerName.includes('bow') ||
+                        lowerName.includes('dagger') || lowerName.includes('weapon')) {
+                        itemType = 'weapon';
+                    } else if (lowerName.includes('shield') || lowerName.includes('armor') || lowerName.includes('helmet')) {
+                        itemType = 'armor';
+                    } else if (lowerName.includes('potion') || lowerName.includes('elixir')) {
+                        itemType = 'potion';
+                    } else if (lowerName.includes('key')) {
+                        itemType = 'key';
+                    } else if (lowerName.includes('gold') || lowerName.includes('coin') || lowerName.includes('gem') ||
+                               lowerName.includes('treasure')) {
+                        itemType = 'treasure';
+                    }
+                }
+
+                const capitalizedName = itemName
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+
+                const item = {
+                    id: itemId,
+                    name: capitalizedName,
+                    type: itemType,
+                };
+
+                if (marker.attributes.bonus) {
+                    item.bonus = marker.attributes.bonus;
+                }
+                if (marker.attributes.restore) {
+                    item.restore = marker.attributes.restore;
+                }
+
+                items.push(item);
+            }
+
+            return items;
+        }
+
         // Extract items from content using 34+ detection patterns (including 8 magic item patterns)
         function extractItems(content) {
-            const items = [];
+            // FIRST: Extract items from markers (highest priority)
+            const markerItems = extractItemsFromMarkers(content);
+            const items = [...markerItems];
+
+            // Track already-processed items (including those from markers)
+            const processedItems = new Set(markerItems.map(item => item.id));
             const itemTypeKeywords = {
                 weapon: ['sword', 'axe', 'bow', 'dagger', 'blade', 'staff', 'wand', 'mace', 'spear', 'crossbow', 'knife', 'club', 'hammer', 'flail', 'halberd', 'rapier', 'scimitar', 'katana', 'longsword', 'shortsword', 'broadsword', 'claymore', 'saber', 'cutlass'],
                 armor: ['shield', 'helmet', 'armor', 'armour', 'mail', 'breastplate', 'gauntlet', 'gauntlets', 'boots', 'greaves', 'chainmail', 'platemail', 'cuirass', 'vambraces'],
@@ -1501,6 +1631,43 @@
             const combats = [];
             const processedCombats = new Set();
 
+            // FIRST: Try marker-based combat (highest priority)
+            const combatMarkers = parseMarkers(content, 'combat');
+
+            for (const marker of combatMarkers) {
+                const combatData = {
+                    enemyName: marker.value,
+                    enemySkill: parseInt(marker.attributes.skill),
+                    enemyStamina: parseInt(marker.attributes.stamina),
+                };
+
+                // Optional attributes
+                if (marker.attributes.onVictory) {
+                    combatData.onVictorySection = parseInt(marker.attributes.onVictory);
+                }
+                if (marker.attributes.onDefeat) {
+                    combatData.onDefeatSection = parseInt(marker.attributes.onDefeat);
+                }
+                if (marker.attributes.canFlee === 'true') {
+                    combatData.canFlee = true;
+                    if (marker.attributes.fleeSection) {
+                        combatData.fleeSection = parseInt(marker.attributes.fleeSection);
+                    }
+                }
+
+                const combatId = `${marker.value.toLowerCase()}-${marker.attributes.skill}-${marker.attributes.stamina}`;
+                if (!processedCombats.has(combatId)) {
+                    processedCombats.add(combatId);
+                    combats.push(combatData);
+                }
+            }
+
+            // If markers found, return them (skip pattern detection)
+            if (combats.length > 0) {
+                return combats.length === 1 ? combats[0] : combats;
+            }
+
+            // SECOND: Fall back to pattern detection
             function addCombat(enemyName, skill, stamina) {
                 if (!enemyName || !skill || !stamina) return;
 
@@ -1817,12 +1984,35 @@
                     section.addItems = items;
                 }
 
-                // Extract choices - look for "turn to", "go to", "proceed to" followed by section numbers
+                // Extract choices
+                // FIRST: Try marker-based choices
+                const choiceMarkers = parseMarkers(sectionText, 'choice');
+                const seenTargets = new Set();
+
+                for (const marker of choiceMarkers) {
+                    const targetSection = parseInt(marker.value);
+                    if (!seenTargets.has(targetSection)) {
+                        seenTargets.add(targetSection);
+
+                        const choice = {
+                            text: marker.attributes.text || `Go to ${targetSection}`,
+                            targetSection: targetSection,
+                        };
+
+                        // Add conditions if present
+                        if (marker.attributes.if) {
+                            choice.conditions = parseCondition(marker.attributes.if);
+                        }
+
+                        section.choices.push(choice);
+                    }
+                }
+
+                // SECOND: Fall back to pattern detection
                 const choiceRegex = /(?:turn|go|proceed|move|continue|head|return)(?:\s+(?:to|back to|forward to))?\s+(?:section\s+)?(\d+)/gi;
                 const choiceMatches = [...sectionText.matchAll(choiceRegex)];
 
                 if (choiceMatches.length > 0) {
-                    const seenTargets = new Set();
                     choiceMatches.forEach((m, idx) => {
                         const targetSection = parseInt(m[1]);
                         if (!seenTargets.has(targetSection)) {
