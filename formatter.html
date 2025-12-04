@@ -352,6 +352,52 @@ If you want to enter, turn to 2.
 (Note: Colons are optional - both 'Section 1' and 'Section 1:' work!)"></textarea>
         </div>
 
+        <!-- Marker Helper Section -->
+        <div class="card">
+            <h2 class="card-title">🏷️ Marker Helper <span style="font-size: 0.9rem; font-weight: normal; color: #6b7280;">(Optional - Enhanced Detection)</span></h2>
+            <p class="help-text">
+                Use these tools to insert <strong>inline markers</strong> for precise, reliable detection. Markers are optional - the formatter also supports natural language detection.
+                <a href="MARKER_SYNTAX_GUIDE.md" target="_blank" style="color: #3b82f6; text-decoration: underline;">View Full Syntax Guide</a>
+            </p>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">⚔️ Combat Markers</h3>
+                <div class="button-group">
+                    <button class="button button-secondary" onclick="insertMarker('combat-basic')">Basic Combat</button>
+                    <button class="button button-secondary" onclick="insertMarker('combat-advanced')">Combat + Routing</button>
+                    <button class="button button-secondary" onclick="insertMarker('combat-flee')">Combat + Flee</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">💎 Item Markers</h3>
+                <div class="button-group">
+                    <button class="button button-secondary" onclick="insertMarker('item-basic')">Basic Item</button>
+                    <button class="button button-secondary" onclick="insertMarker('item-weapon')">Weapon</button>
+                    <button class="button button-secondary" onclick="insertMarker('item-potion')">Potion</button>
+                    <button class="button button-secondary" onclick="insertMarker('treasure')">Treasure</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">🔀 Choice Markers</h3>
+                <div class="button-group">
+                    <button class="button button-secondary" onclick="insertMarker('choice-basic')">Basic Choice</button>
+                    <button class="button button-secondary" onclick="insertMarker('choice-conditional')">Conditional (Stat)</button>
+                    <button class="button button-secondary" onclick="insertMarker('choice-item')">Conditional (Item)</button>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">⚡ Action Markers</h3>
+                <div class="button-group">
+                    <button class="button button-secondary" onclick="insertMarker('action-stat')">Stat Change</button>
+                    <button class="button button-secondary" onclick="insertMarker('action-luck')">Test Luck</button>
+                    <button class="button button-secondary" onclick="insertMarker('action-remove')">Remove Item</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Results Section -->
         <div id="results-container" class="hidden">
             <!-- Validation Results -->
@@ -1476,6 +1522,85 @@ If you want to enter, turn to 2.
             a.download = `${currentJSON.id || 'adventure'}.json`;
             a.click();
             URL.revokeObjectURL(url);
+        }
+
+        // Insert marker at cursor position
+        function insertMarker(markerType) {
+            const textarea = document.getElementById('adventure-input');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const selectedText = text.substring(start, end);
+
+            let markerTemplate = '';
+
+            // Define marker templates
+            switch(markerType) {
+                case 'combat-basic':
+                    markerTemplate = '{combat: ENEMY NAME | skill=6 | stamina=8}';
+                    break;
+                case 'combat-advanced':
+                    markerTemplate = '{combat: ENEMY NAME | skill=6 | stamina=8 | onVictory=10 | onDefeat=99}';
+                    break;
+                case 'combat-flee':
+                    markerTemplate = '{combat: ENEMY NAME | skill=6 | stamina=8 | canFlee=true | fleeSection=15}';
+                    break;
+                case 'item-basic':
+                    markerTemplate = '{item: item name}';
+                    break;
+                case 'item-weapon':
+                    markerTemplate = '{item: weapon name | type=weapon | bonus=+2 skill}';
+                    break;
+                case 'item-potion':
+                    markerTemplate = '{item: potion name | type=potion | restore=+4 stamina}';
+                    break;
+                case 'treasure':
+                    markerTemplate = '{treasure: 50 gold coins}';
+                    break;
+                case 'choice-basic':
+                    markerTemplate = '{choice: 5}';
+                    break;
+                case 'choice-conditional':
+                    markerTemplate = '{choice: 10 | if: skill>7 | Use your strength}';
+                    break;
+                case 'choice-item':
+                    markerTemplate = '{choice: 15 | if: hasItem=magic-key | Unlock the door}';
+                    break;
+                case 'action-stat':
+                    markerTemplate = '{action: +2 stamina}';
+                    break;
+                case 'action-luck':
+                    markerTemplate = '{action: testLuck | success=20 | fail=21}';
+                    break;
+                case 'action-remove':
+                    markerTemplate = '{action: removeItem=item-id}';
+                    break;
+            }
+
+            // If text is selected, try to use it in the marker
+            if (selectedText) {
+                if (markerType.startsWith('combat')) {
+                    markerTemplate = markerTemplate.replace('ENEMY NAME', selectedText);
+                } else if (markerType.startsWith('item') || markerType === 'treasure') {
+                    markerTemplate = markerTemplate.replace(/item name|weapon name|potion name|50 gold coins/, selectedText);
+                } else if (markerType.startsWith('choice')) {
+                    // For choices, add the selected text as the choice text
+                    if (markerTemplate.includes(' | ')) {
+                        markerTemplate = markerTemplate.replace('}', ` | ${selectedText}}`);
+                    } else {
+                        markerTemplate = markerTemplate.replace('}', ` | ${selectedText}}`);
+                    }
+                }
+            }
+
+            // Insert marker at cursor position
+            const newText = text.substring(0, start) + markerTemplate + text.substring(end);
+            textarea.value = newText;
+
+            // Set cursor position after the inserted marker
+            const newCursorPos = start + markerTemplate.length;
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
         }
 
         // Clear all

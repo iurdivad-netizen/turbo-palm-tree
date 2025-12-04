@@ -1,0 +1,58 @@
+Title: Marker Test Adventure
+Author: Test Author
+Description: Test adventure demonstrating inline marker syntax
+Initial SKILL: 8
+Initial STAMINA: 20
+Initial LUCK: 9
+
+Section 1
+The Cave Entrance
+
+You stand before a dark cave entrance. Inside, you can see flickering torchlight.
+
+A {combat: GOBLIN GUARD | skill=6 | stamina=7 | onVictory=2 | onDefeat=99} blocks the entrance!
+
+Section 2
+Victory!
+
+You defeat the guard and enter the cave. On the ground you find a {item: rusty sword | type=weapon | bonus=+1 skill} and {treasure: 25 gold coins}.
+
+{action: +2 stamina | You rest and recover}
+
+Will you {choice: 3 | Go deeper into the cave} or {choice: 4 | if: skill>7 | Try to sneak past the next room}?
+
+Section 3
+The Treasure Room
+
+You find a massive treasure chest! Inside are:
+- {treasure: 100 gold coins}
+- {item: healing potion | type=potion | restore=+4 stamina}
+- {item: magic amulet | type=other | bonus=+1 luck}
+
+This is the end of your adventure. You win!
+
+Section 4
+The Stealth Path
+
+You successfully sneak past the guards using your skills!
+
+You find a {item: lockpick | type=other} hidden in a crevice.
+
+{action: testLuck | success=5 | fail=6}
+
+Section 5
+Lucky!
+
+You were lucky! The trap doesn't trigger. Turn to 3.
+
+Section 6
+Unlucky!
+
+You were unlucky! The trap triggers. {action: -3 stamina}
+
+If you survive, turn to 3.
+
+Section 99
+Game Over
+
+You have been defeated. Your adventure ends here.

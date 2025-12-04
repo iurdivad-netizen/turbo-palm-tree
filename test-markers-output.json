@@ -1,0 +1,130 @@
+{
+  "id": "marker-test-adventure",
+  "title": "Marker Test Adventure",
+  "author": "Test Author",
+  "description": "Test adventure demonstrating inline marker syntax",
+  "startingSection": 1,
+  "initialStats": {
+    "skill": 8,
+    "stamina": 20,
+    "luck": 9
+  },
+  "sections": [
+    {
+      "id": 1,
+      "text": "The Cave Entrance\n\nYou stand before a dark cave entrance. Inside, you can see flickering torchlight.\n\nA {combat: GOBLIN GUARD | skill=6 | stamina=7 | onVictory=2 | onDefeat=99} blocks the entrance!",
+      "title": "The Cave Entrance",
+      "combat": {
+        "enemyName": "GOBLIN GUARD",
+        "enemySkill": 6,
+        "enemyStamina": 7,
+        "onVictorySection": 2,
+        "onDefeatSection": 999
+      },
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 2,
+      "text": "Victory!\n\nYou defeat the guard and enter the cave. On the ground you find a {item: rusty sword | type=weapon | bonus=+1 skill} and {treasure: 25 gold coins}.\n\n{action: +2 stamina | You rest and recover}\n\nWill you {choice: 3 | Go deeper into the cave} or {choice: 4 | if: skill>7 | Try to sneak past the next room}?",
+      "title": "Victory!",
+      "choices": [
+        {
+          "text": "Go deeper into the cave",
+          "targetSection": 3
+        },
+        {
+          "text": "Try to sneak past the next room",
+          "targetSection": 4
+        }
+      ],
+      "addItems": [
+        {
+          "id": "rusty-sword",
+          "name": "Rusty Sword",
+          "type": "weapon",
+          "bonus": "+1 skill"
+        },
+        {
+          "id": "25-gold-coins",
+          "name": "25 Gold Coins",
+          "type": "treasure"
+        }
+      ],
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 3,
+      "text": "The Treasure Room\n\nYou find a massive treasure chest! Inside are:\n- {treasure: 100 gold coins}\n- {item: healing potion | type=potion | restore=+4 stamina}\n- {item: magic amulet | type=other | bonus=+1 luck}\n\nThis is the end of your adventure. You win!",
+      "title": "The Treasure Room",
+      "addItems": [
+        {
+          "id": "100-gold-coins",
+          "name": "100 Gold Coins",
+          "type": "treasure"
+        },
+        {
+          "id": "healing-potion",
+          "name": "Healing Potion",
+          "type": "potion",
+          "restore": "+4 stamina"
+        },
+        {
+          "id": "magic-amulet",
+          "name": "Magic Amulet",
+          "type": "other",
+          "bonus": "+1 luck"
+        },
+        {
+          "id": "treasure",
+          "name": "Treasure",
+          "type": "treasure"
+        }
+      ],
+      "isEnding": true,
+      "endingType": "neutral"
+    },
+    {
+      "id": 4,
+      "text": "The Stealth Path\n\nYou successfully sneak past the guards using your skills!\n\nYou find a {item: lockpick | type=other} hidden in a crevice.\n\n{action: testLuck | success=5 | fail=6}",
+      "title": "The Stealth Path",
+      "addItems": [
+        {
+          "id": "lockpick",
+          "name": "Lockpick",
+          "type": "other"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "text": "Lucky!\n\nYou were lucky! The trap doesn't trigger. Turn to 3.",
+      "title": "Lucky!",
+      "choices": [
+        {
+          "text": "Turn to 3",
+          "targetSection": 3
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "text": "Unlucky!\n\nYou were unlucky! The trap triggers. {action: -3 stamina}\n\nIf you survive, turn to 3.",
+      "title": "Unlucky!",
+      "choices": [
+        {
+          "text": "turn to 3",
+          "targetSection": 3
+        }
+      ]
+    },
+    {
+      "id": 99,
+      "text": "Game Over\n\nYou have been defeated. Your adventure ends here.",
+      "title": "Game Over",
+      "isEnding": true,
+      "endingType": "defeat"
+    }
+  ]
+}
