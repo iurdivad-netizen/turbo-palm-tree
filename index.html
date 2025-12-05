@@ -537,6 +537,34 @@
                 }, 0);
             },
 
+            // Use an item from inventory (e.g., healing potion, ration)
+            useItem(itemId) {
+                const item = this.inventory.find(i => i.id === itemId);
+                if (!item || !item.restore) return;
+
+                // Parse the restore property (e.g., "+4 stamina", "+2 skill", "+1 luck")
+                const restoreMatch = item.restore.match(/([+-]\d+)\s*(\w+)/);
+                if (restoreMatch) {
+                    const amount = parseInt(restoreMatch[1]);
+                    const stat = restoreMatch[2].toLowerCase();
+
+                    // Apply the restoration
+                    if (stat === 'stamina' || stat === 'skill' || stat === 'luck') {
+                        const changes = {};
+                        changes[stat] = amount;
+                        this.modifyStats(changes);
+
+                        // Show feedback message
+                        alert(`You used ${item.name}! ${amount >= 0 ? '+' : ''}${amount} ${stat.toUpperCase()}`);
+
+                        // Remove consumable items after use
+                        if (item.type === 'potion' || item.type === 'food') {
+                            this.removeItem(itemId);
+                        }
+                    }
+                }
+            },
+
             saveGame() {
                 if (!this.currentBook || !this.stats) return;
 
@@ -842,6 +870,7 @@
                 weapon: '⚔️',
                 armor: '🛡️',
                 potion: '🧪',
+                food: '🍞',
                 treasure: '💎',
                 key: '🔑',
                 other: '📦'
@@ -859,6 +888,8 @@
             } else {
                 GameState.inventory.forEach((item, index) => {
                     const itemClass = `item-${item.type || 'other'}`;
+                    const isUsable = item.restore ? true : false;
+
                     html += `
                         <div class="inventory-item ${itemClass}">
                             <div style="flex: 1;">
@@ -867,8 +898,13 @@
                                     <strong>${item.name}</strong>
                                 </div>
                                 ${item.description ? `<div style="font-size: 0.875rem; color: #6b7280; margin-left: 2rem;">${item.description}</div>` : ''}
+                                ${item.restore ? `<div style="font-size: 0.75rem; color: #059669; margin-left: 2rem; margin-top: 0.25rem;">✨ ${item.restore}</div>` : ''}
+                                ${item.bonus ? `<div style="font-size: 0.75rem; color: #7c3aed; margin-left: 2rem; margin-top: 0.25rem;">⚡ ${item.bonus}</div>` : ''}
                             </div>
-                            <span class="remove-item" onclick="GameState.removeItem('${item.id}')" title="Remove item">✕</span>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                ${isUsable ? `<button class="btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;" onclick="GameState.useItem('${item.id}')">Use</button>` : ''}
+                                <span class="remove-item" onclick="GameState.removeItem('${item.id}')" title="Remove item">✕</span>
+                            </div>
                         </div>
                     `;
                 });
