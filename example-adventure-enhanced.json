@@ -1,0 +1,314 @@
+{
+  "id": "the-forest-of-destiny",
+  "title": "The Forest of Destiny",
+  "author": "Example Adventure Creator",
+  "description": "A short text-based adventure through a mysterious forest",
+  "startingSection": 1,
+  "initialStats": {
+    "skill": 7,
+    "stamina": 18,
+    "luck": 8
+  },
+  "sections": [
+    {
+      "id": 1,
+      "text": "The Forest Entrance\n\nYou stand at the edge of a dark forest. The trees loom overhead, their branches intertwining to form a natural canopy that blocks out most of the sunlight. A dirt path leads into the darkness, while to your right you notice what appears to be an old wooden signpost.\n\n{choice: 2 | Follow the path into the forest}\n{choice: 3 | Examine the signpost first}",
+      "title": "The Forest Entrance",
+      "choices": [
+        {
+          "text": "Follow the path into the forest",
+          "targetSection": 2
+        },
+        {
+          "text": "Examine the signpost first",
+          "targetSection": 3
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "text": "The Dark Path\n\nYou venture down the path into the forest. The air grows colder and the sounds of birds fade away. After walking for several minutes, you hear a rustling in the bushes ahead. Suddenly, a {combat: FOREST GOBLIN | skill=6 | stamina=5 | onVictory=5 | onDefeat=999} jumps out to attack you!",
+      "title": "The Dark Path",
+      "combat": {
+        "enemyName": "FOREST GOBLIN",
+        "enemySkill": 6,
+        "enemyStamina": 5,
+        "onVictorySection": 3,
+        "onDefeatSection": 999
+      },
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 3,
+      "text": "The Signpost\n\nYou approach the weathered signpost. Despite years of exposure to the elements, you can still make out the faded words: \"Beware the creatures within. Only the brave shall pass.\" Behind the signpost, partially buried in leaves, you spot something glinting.\n\n{choice: 4 | Dig up the glinting object}\n{choice: 2 | Leave it alone and enter the forest}",
+      "title": "The Signpost",
+      "choices": [
+        {
+          "text": "Dig up the glinting object",
+          "targetSection": 4
+        },
+        {
+          "text": "Leave it alone and enter the forest",
+          "targetSection": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "text": "The Hidden Treasure\n\nYou brush away the leaves and discover an old leather pouch! Inside you find a {item: small healing potion | type=potion | restore=+4 stamina} that will restore 4 STAMINA points when you drink it. You also find a {item: rusty key | type=key} - perhaps it will be useful later. Pocketing your discoveries, you head into the forest. Turn to 2.",
+      "title": "The Hidden Treasure",
+      "choices": [
+        {
+          "text": "Turn to 2",
+          "targetSection": 2
+        }
+      ],
+      "addItems": [
+        {
+          "id": "small-healing-potion",
+          "name": "Small Healing Potion",
+          "type": "potion",
+          "restore": "+4 stamina"
+        },
+        {
+          "id": "rusty-key",
+          "name": "Rusty Key",
+          "type": "key"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "text": "Victory Over the Goblin\n\nThe goblin falls to the ground, defeated. As you catch your breath, you notice the creature was guarding a small clearing. In the center of the clearing stands an ancient stone altar with strange symbols carved into its surface. There are two paths leading away from the clearing - one to the north and one to the east.\n\n{choice: 6 | Examine the altar closely}\n{choice: 7 | Take the northern path}\n{choice: 8 | Take the eastern path}",
+      "title": "Victory Over the Goblin",
+      "choices": [
+        {
+          "text": "Examine the altar closely",
+          "targetSection": 6
+        },
+        {
+          "text": "Take the northern path",
+          "targetSection": 7
+        },
+        {
+          "text": "Take the eastern path",
+          "targetSection": 8
+        }
+      ],
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 6,
+      "text": "The Ancient Altar\n\nYou approach the altar carefully. The symbols seem to pulse with a faint blue light as you draw near. In the center of the altar is a small depression, perfectly sized for a key.\n\n{choice: 9 | if: hasItem=rusty-key | Use the rusty key}\n{choice: 7 | Take the northern path}",
+      "title": "The Ancient Altar",
+      "choices": [
+        {
+          "text": "Use the rusty key",
+          "targetSection": 9
+        },
+        {
+          "text": "Take the northern path",
+          "targetSection": 7
+        }
+      ],
+      "addItems": [
+        {
+          "id": "key",
+          "name": "Key",
+          "type": "key"
+        },
+        {
+          "id": "rusty-key",
+          "name": "Rusty Key",
+          "type": "key"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "text": "The Northern Path\n\nYou take the northern path, which winds deeper into the forest. The trees here are even more twisted and gnarled. After a while, you come across a small wooden bridge crossing a stream. The bridge looks unstable.\n\n{choice: 10 | Cross the bridge carefully}\n{choice: 11 | Wade through the stream instead}",
+      "title": "The Northern Path",
+      "choices": [
+        {
+          "text": "Cross the bridge carefully",
+          "targetSection": 10
+        },
+        {
+          "text": "Wade through the stream instead",
+          "targetSection": 11
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "text": "The Eastern Path\n\nThe eastern path leads you to a beautiful grove filled with colorful flowers. The scene is peaceful, almost too peaceful. As you step into the grove, you feel your strength returning. {action: +3 stamina | You feel refreshed}\n\nFeeling refreshed, you notice a path continuing to the north. Turn to 12.",
+      "title": "The Eastern Path",
+      "choices": [
+        {
+          "text": "Turn to 12",
+          "targetSection": 12
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "text": "The Altar's Secret\n\nYou insert the rusty key into the depression on the altar. There is a loud clicking sound and the top of the altar slides open, revealing a hidden compartment! Inside you find an {item: ancient sword | type=weapon | bonus=+1 skill}, its blade still sharp despite its age. You also find a {item: forest map | type=other} showing a path through the forest.\n\n{action: +1 skill | You feel more skilled with the ancient sword}\n\nFeeling more confident, you take the northern path. Turn to 12.",
+      "title": "The Altar's Secret",
+      "choices": [
+        {
+          "text": "Turn to 12",
+          "targetSection": 12
+        }
+      ],
+      "addItems": [
+        {
+          "id": "ancient-sword",
+          "name": "Ancient Sword",
+          "type": "weapon",
+          "bonus": "+1 skill"
+        },
+        {
+          "id": "forest-map",
+          "name": "Forest Map",
+          "type": "other"
+        },
+        {
+          "id": "rusty-key",
+          "name": "Rusty Key",
+          "type": "key"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "text": "Crossing the Bridge\n\nYou carefully make your way across the old bridge. The boards creak beneath your feet, but they hold. You successfully reach the other side. Turn to 12.",
+      "title": "Crossing the Bridge",
+      "choices": [
+        {
+          "text": "Turn to 12",
+          "targetSection": 12
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "text": "Through the Stream\n\nYou decide the bridge is too risky and wade into the stream. The water is deeper than you expected and the current is strong. The cold water saps your strength. {action: -2 stamina | The cold water drains you}\n\nYou eventually make it across, cold and tired. Turn to 12.",
+      "title": "Through the Stream",
+      "choices": [
+        {
+          "text": "Turn to 12",
+          "targetSection": 12
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "text": "The Forest Heart\n\nYou have reached the heart of the forest. Here stands a massive ancient oak tree, larger than any you've ever seen. Its trunk is at least twenty feet wide, and its branches reach high into the sky. At the base of the tree, you see a small wooden door.\n\n{choice: 13 | Knock on the door}\n{choice: 14 | Examine the tree trunk}",
+      "title": "The Forest Heart",
+      "choices": [
+        {
+          "text": "Knock on the door",
+          "targetSection": 13
+        },
+        {
+          "text": "Examine the tree trunk",
+          "targetSection": 14
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "text": "The Guardian\n\nYou knock on the small door. After a moment, it swings open and an elderly man with a long white beard steps out. \"Greetings, traveler,\" he says. \"I am the Guardian of this forest. Few have made it this far. You have proven your courage.\" He hands you a {item: guiding crystal | type=other} that glows with inner light. \"This will guide you safely out of the forest. You have succeeded!\" You have won! Turn to 15.",
+      "title": "The Guardian",
+      "choices": [
+        {
+          "text": "Turn to 15",
+          "targetSection": 15
+        }
+      ],
+      "addItems": [
+        {
+          "id": "guiding-crystal",
+          "name": "Guiding Crystal",
+          "type": "other"
+        }
+      ],
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 14,
+      "text": "The Tree's Secret\n\nYou examine the tree trunk carefully and notice that the wood seems to shimmer in one spot. As you touch it, your hand passes right through - an illusion! Beyond the illusion is a dark tunnel leading underground. Curious, you step through.\n\n{choice: 16 | Explore the tunnel}\n{choice: 13 | Go back and knock on the door instead}",
+      "title": "The Tree's Secret",
+      "choices": [
+        {
+          "text": "Explore the tunnel",
+          "targetSection": 16
+        },
+        {
+          "text": "Go back and knock on the door instead",
+          "targetSection": 13
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "text": "Victorious Exit\n\nWith the glowing crystal to light your way, you easily find the path out of the forest. As you emerge on the other side, the forest seems less dark and foreboding than before. You have successfully completed your adventure! The End.",
+      "title": "Victorious Exit",
+      "isEnding": true,
+      "endingType": "neutral"
+    },
+    {
+      "id": 16,
+      "text": "The Dark Tunnel\n\nYou descend into the dark tunnel beneath the tree. The air grows damp and cold. As you feel your way along the walls, you hear a low growling sound ahead. Suddenly, a massive {combat: CAVE TROLL | skill=8 | stamina=10 | onVictory=17 | onDefeat=999 | canFlee=true | fleeSection=13} blocks your path!",
+      "title": "The Dark Tunnel",
+      "combat": {
+        "enemyName": "CAVE TROLL",
+        "enemySkill": 8,
+        "enemyStamina": 10,
+        "onVictorySection": 17,
+        "onDefeatSection": 999
+      },
+      "isEnding": true,
+      "endingType": "victory"
+    },
+    {
+      "id": 17,
+      "text": "The Troll's Hoard\n\nYou have defeated the fearsome cave troll! Searching the tunnel, you discover the troll's hoard - piles of {treasure: 500 gold coins} and jewels collected from unfortunate adventurers. Among the treasure, you find a {item: magic amulet | type=other | bonus=+2 skill} that pulses with power.\n\n{action: +2 skill | The magic amulet enhances your abilities}\n\nYour STAMINA is also restored to its initial value. Feeling victorious, you make your way back up to the forest and knock on the guardian's door. Turn to 13.",
+      "title": "The Troll's Hoard",
+      "choices": [
+        {
+          "text": "Turn to 13",
+          "targetSection": 13
+        }
+      ],
+      "addItems": [
+        {
+          "id": "500-gold-coins",
+          "name": "500 Gold Coins",
+          "type": "treasure"
+        },
+        {
+          "id": "magic-amulet",
+          "name": "Magic Amulet",
+          "type": "other",
+          "bonus": "+2 skill"
+        },
+        {
+          "id": "treasure",
+          "name": "Treasure",
+          "type": "treasure"
+        }
+      ]
+    },
+    {
+      "id": 999,
+      "text": "Death in the Forest\n\nYour adventure ends here in the depths of the dark forest. Perhaps another, braver adventurer will succeed where you have failed. The End.",
+      "title": "Death in the Forest",
+      "isEnding": true,
+      "endingType": "defeat"
+    }
+  ]
+}
