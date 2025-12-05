@@ -509,6 +509,34 @@
                 return { success, newLuck: this.stats.luck };
             },
 
+            // Calculate total attack bonus from weapons in inventory
+            calculateAttackBonus() {
+                return this.inventory.reduce((total, item) => {
+                    if (item.type === 'weapon' && item.bonus) {
+                        // Extract numeric bonus from strings like "+1 skill", "+2 attack", etc.
+                        const match = item.bonus.match(/([+-]\d+)/);
+                        if (match) {
+                            return total + parseInt(match[1]);
+                        }
+                    }
+                    return total;
+                }, 0);
+            },
+
+            // Calculate total defense bonus from armor in inventory
+            calculateDefenseBonus() {
+                return this.inventory.reduce((total, item) => {
+                    if (item.type === 'armor' && item.bonus) {
+                        // Extract numeric bonus from strings like "+1 defense", "+2 armor", etc.
+                        const match = item.bonus.match(/([+-]\d+)/);
+                        if (match) {
+                            return total + parseInt(match[1]);
+                        }
+                    }
+                    return total;
+                }, 0);
+            },
+
             saveGame() {
                 if (!this.currentBook || !this.stats) return;
 
@@ -2237,7 +2265,8 @@
 
             // Roll for player
             const playerDice = GameState.rollTwoDice();
-            const playerAttackStrength = playerDice + GameState.stats.skill;
+            const attackBonus = GameState.calculateAttackBonus();
+            const playerAttackStrength = playerDice + GameState.stats.skill + attackBonus;
 
             // Roll for enemy
             const enemyDice = GameState.rollTwoDice();
@@ -2245,7 +2274,14 @@
 
             const roundNum = GameState.combatLog.filter(l => l.includes('Round')).length + 1;
             GameState.combatLog.push(`\nRound ${roundNum}:`);
-            GameState.combatLog.push(`You rolled ${playerDice} + ${GameState.stats.skill} SKILL = ${playerAttackStrength}`);
+
+            // Show attack bonus in combat log if present
+            if (attackBonus !== 0) {
+                GameState.combatLog.push(`You rolled ${playerDice} + ${GameState.stats.skill} SKILL + ${attackBonus} (weapon bonus) = ${playerAttackStrength}`);
+            } else {
+                GameState.combatLog.push(`You rolled ${playerDice} + ${GameState.stats.skill} SKILL = ${playerAttackStrength}`);
+            }
+
             GameState.combatLog.push(`${combat.enemyName} rolled ${enemyDice} + ${combat.enemySkill} SKILL = ${enemyAttackStrength}`);
 
             if (playerAttackStrength > enemyAttackStrength) {
@@ -2277,8 +2313,18 @@
                 }
             } else if (enemyAttackStrength > playerAttackStrength) {
                 // Enemy wins
-                GameState.modifyStats({ stamina: -2 });
-                GameState.combatLog.push(`💔 ${combat.enemyName} hits you for 2 damage!`);
+                const defenseBonus = GameState.calculateDefenseBonus();
+                const baseDamage = 2;
+                const actualDamage = Math.max(1, baseDamage - defenseBonus); // Minimum 1 damage
+
+                GameState.modifyStats({ stamina: -actualDamage });
+
+                // Show defense bonus in combat log if present
+                if (defenseBonus > 0) {
+                    GameState.combatLog.push(`💔 ${combat.enemyName} hits you for ${actualDamage} damage! (reduced from ${baseDamage} by ${defenseBonus} armor bonus)`);
+                } else {
+                    GameState.combatLog.push(`💔 ${combat.enemyName} hits you for ${actualDamage} damage!`);
+                }
 
                 if (GameState.stats.stamina <= 0) {
                     GameState.combatLog.push(`\n💀 You have been defeated...`);
