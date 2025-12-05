@@ -1,0 +1,38 @@
+Title: Edge Case Test
+Author: Test
+
+Section 1
+Multiple markers in one line
+
+You find {item: sword} and {item: shield | type=armor} plus {treasure: 100 gold coins}.
+
+Section 2
+Conditional choice
+
+{choice: 3 | if: skill>7 | Use strength}
+{choice: 4 | if: hasItem=key | Use key}
+
+Section 3
+Combat with all attributes
+
+{combat: DRAGON | skill=12 | stamina=20 | onVictory=10 | onDefeat=99 | canFlee=true | fleeSection=5}
+
+Section 4
+Item with bonus
+
+{item: magic amulet | type=other | bonus=+1 luck}
+
+Section 5
+Action markers
+
+{action: +2 stamina}
+{action: testLuck | success=6 | fail=7}
+
+Section 6
+Success
+
+Section 7
+Fail
+
+Section 10
+Victory
