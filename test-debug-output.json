@@ -1,0 +1,44 @@
+{
+  "id": "debug-test",
+  "title": "Debug Test",
+  "author": "Test",
+  "description": "",
+  "startingSection": 1,
+  "initialStats": {
+    "skill": 6,
+    "stamina": 14,
+    "luck": 6
+  },
+  "sections": [
+    {
+      "id": 1,
+      "text": "Test basic markers\n\n{combat: TEST ENEMY | skill=5 | stamina=6}\n\nYou find {item: test sword | type=weapon}.\n\n{choice: 2}",
+      "title": "Test basic markers",
+      "choices": [
+        {
+          "text": "2",
+          "targetSection": 2
+        }
+      ],
+      "combat": {
+        "enemyName": "TEST ENEMY",
+        "enemySkill": 5,
+        "enemyStamina": 6,
+        "onVictorySection": 2,
+        "onDefeatSection": 999
+      },
+      "addItems": [
+        {
+          "id": "test-sword",
+          "name": "Test Sword",
+          "type": "weapon"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "text": "End",
+      "title": "End"
+    }
+  ]
+}
