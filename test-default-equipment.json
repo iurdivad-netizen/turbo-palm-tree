@@ -12,7 +12,7 @@
   "sections": [
     {
       "id": 1,
-      "text": "You wake up in a mysterious dungeon. This is a test adventure to verify default starting equipment. Check your inventory - you should have a sword, shield, leather armor, backpack, 10 gold pieces, and 10 rations. Try using a ration to restore stamina (max 20). Then turn to section 2.",
+      "text": "You wake up in a mysterious dungeon. This is a test adventure to verify default starting equipment. Check your inventory - you should have a sword, shield, leather armor, backpack, and 10 rations. Check your character sheet - you should have 10 Gold Pieces. Try using a ration to restore stamina (max 20). Then turn to section 2.",
       "choices": [
         {
           "text": "Continue to section 2",
