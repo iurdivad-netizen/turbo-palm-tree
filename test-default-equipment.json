@@ -1,0 +1,30 @@
+{
+  "id": "test-default",
+  "title": "Test Default Equipment",
+  "author": "Test",
+  "version": "1.0",
+  "initialStats": {
+    "skill": 10,
+    "stamina": 20,
+    "luck": 10
+  },
+  "startingSection": 1,
+  "sections": [
+    {
+      "id": 1,
+      "text": "You wake up in a mysterious dungeon. This is a test adventure to verify default starting equipment. Check your inventory - you should have a sword, shield, backpack, and 10 rations. Try using a ration to restore stamina (max 20). Then turn to section 2.",
+      "choices": [
+        {
+          "text": "Continue to section 2",
+          "target": 2
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "text": "Great! The default equipment is working. You can now end this test adventure.",
+      "isEnding": true,
+      "endingType": "success"
+    }
+  ]
+}
