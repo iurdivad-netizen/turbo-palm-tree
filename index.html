@@ -446,11 +446,13 @@
                 // Set up starting inventory - if no starting items specified, provide default equipment
                 const bookStartingItems = this.currentBook.startingItems || [];
                 if (bookStartingItems.length === 0) {
-                    // Default starting equipment: sword, shield, backpack, and 10 rations
+                    // Default starting equipment: sword, shield, leather armor, backpack, 10 rations, and 10 gold pieces
                     this.inventory = [
                         { id: 'sword', name: 'Sword', type: 'weapon' },
                         { id: 'shield', name: 'Shield', type: 'armor' },
+                        { id: 'leather-armor', name: 'Leather Armor', type: 'armor' },
                         { id: 'backpack', name: 'Backpack', type: 'other' },
+                        { id: 'gold-pieces', name: '10 Gold Pieces', type: 'treasure' },
                         // 10 rations, each providing +4 STAMINA (capped at maximum)
                         { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
                         { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
