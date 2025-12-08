@@ -439,7 +439,8 @@
                     luck: this.currentBook.initialStats.luck,
                     initialSkill: this.currentBook.initialStats.skill,
                     initialStamina: this.currentBook.initialStats.stamina,
-                    initialLuck: this.currentBook.initialStats.luck
+                    initialLuck: this.currentBook.initialStats.luck,
+                    gold: 0
                 };
 
                 // Set up starting inventory - if no starting items specified, provide default equipment
@@ -500,8 +501,25 @@
                 render();
             },
 
+            addGold(amount) {
+                if (!this.stats) return;
+                this.stats.gold = (this.stats.gold || 0) + amount;
+                render();
+            },
+
             addItem(item) {
-                this.inventory.push(item);
+                // Check if item is gold/coins (but not golden items like "golden ring")
+                const itemName = item.name.toLowerCase();
+                const isGold = /\b(gold pieces?|coins?|gp)\b/.test(itemName);
+
+                if (isGold) {
+                    // Extract amount from name (e.g., "10 Gold Coins" -> 10, "30 Gold Pieces" -> 30)
+                    const match = item.name.match(/(\d+)/);
+                    const amount = match ? parseInt(match[1]) : 1;
+                    this.addGold(amount);
+                } else {
+                    this.inventory.push(item);
+                }
                 render();
             },
 
@@ -867,6 +885,12 @@
                     ${renderStatBar('SKILL', GameState.stats.skill, GameState.stats.initialSkill)}
                     ${renderStatBar('STAMINA', GameState.stats.stamina, GameState.stats.initialStamina)}
                     ${renderStatBar('LUCK', GameState.stats.luck, GameState.stats.initialLuck)}
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 0.5rem; border: 2px solid #d97706;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600; color: #78350f;">💰 Gold Pieces:</span>
+                            <span style="font-size: 1.25rem; font-weight: bold; color: #d97706;">${GameState.stats.gold || 0} GP</span>
+                        </div>
+                    </div>
                 </div>
             `;
         }
