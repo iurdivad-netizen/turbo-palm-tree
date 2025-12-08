@@ -441,7 +441,31 @@
                     initialStamina: this.currentBook.initialStats.stamina,
                     initialLuck: this.currentBook.initialStats.luck
                 };
-                this.inventory = [...(this.currentBook.startingItems || [])];
+
+                // Set up starting inventory - if no starting items specified, provide default equipment
+                const bookStartingItems = this.currentBook.startingItems || [];
+                if (bookStartingItems.length === 0) {
+                    // Default starting equipment: sword, shield, backpack, and 10 rations
+                    this.inventory = [
+                        { id: 'sword', name: 'Sword', type: 'weapon' },
+                        { id: 'shield', name: 'Shield', type: 'armor' },
+                        { id: 'backpack', name: 'Backpack', type: 'other' },
+                        // 10 rations, each providing +4 STAMINA (capped at maximum)
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' },
+                        { id: 'rations', name: 'Rations', type: 'food', restore: '+4 stamina' }
+                    ];
+                } else {
+                    this.inventory = [...bookStartingItems];
+                }
+
                 this.currentSection = this.currentBook.startingSection;
                 this.visitedSections = new Set([this.currentBook.startingSection]);
                 render();
@@ -470,9 +494,9 @@
 
             modifyStats(changes) {
                 if (!this.stats) return;
-                if (changes.skill) this.stats.skill = Math.max(0, this.stats.skill + changes.skill);
-                if (changes.stamina) this.stats.stamina = Math.max(0, this.stats.stamina + changes.stamina);
-                if (changes.luck) this.stats.luck = Math.max(0, this.stats.luck + changes.luck);
+                if (changes.skill) this.stats.skill = Math.max(0, Math.min(this.stats.initialSkill, this.stats.skill + changes.skill));
+                if (changes.stamina) this.stats.stamina = Math.max(0, Math.min(this.stats.initialStamina, this.stats.stamina + changes.stamina));
+                if (changes.luck) this.stats.luck = Math.max(0, Math.min(this.stats.initialLuck, this.stats.luck + changes.luck));
                 render();
             },
 
