@@ -1625,7 +1625,8 @@
         {
           "id": "silver-dagger",
           "name": "Silver Dagger",
-          "type": "weapon"
+          "type": "weapon",
+          "bonus": "+1"
         },
         {
           "id": "blade",
@@ -2850,7 +2851,8 @@
         {
           "id": "silver-dagger",
           "name": "Silver Dagger",
-          "type": "weapon"
+          "type": "weapon",
+          "bonus": "+1"
         },
         {
           "id": "blade",
@@ -3062,7 +3064,8 @@
         {
           "id": "silver-dagger",
           "name": "Silver Dagger",
-          "type": "weapon"
+          "type": "weapon",
+          "bonus": "+1"
         }
       ]
     },
@@ -5613,7 +5616,8 @@
         {
           "id": "silver-dagger",
           "name": "Silver Dagger",
-          "type": "weapon"
+          "type": "weapon",
+          "bonus": "+1"
         },
         {
           "id": "silver-ring",
