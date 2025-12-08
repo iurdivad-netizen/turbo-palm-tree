@@ -518,6 +518,191 @@ function extractItems(content) {
   return items;
 }
 
+function listItems(filePath) {
+  log('\n📦 Listing All Items...', 'cyan');
+  log('='.repeat(50), 'cyan');
+
+  // Read the JSON file
+  let adventure;
+  try {
+    const data = fs.readFileSync(filePath, 'utf-8');
+    adventure = JSON.parse(data);
+  } catch (error) {
+    log(`❌ Error reading JSON file: ${error.message}`, 'red');
+    return;
+  }
+
+  // Collect all items from all sections
+  const allItems = new Map(); // Use Map to avoid duplicates by ID
+  let totalItemOccurrences = 0;
+
+  if (adventure.sections) {
+    adventure.sections.forEach(section => {
+      if (section.addItems && Array.isArray(section.addItems)) {
+        section.addItems.forEach(item => {
+          totalItemOccurrences++;
+
+          // Track which sections have this item
+          if (allItems.has(item.id)) {
+            const existing = allItems.get(item.id);
+            existing.sections.push(section.id);
+          } else {
+            allItems.set(item.id, {
+              ...item,
+              sections: [section.id],
+            });
+          }
+        });
+      }
+    });
+  }
+
+  if (allItems.size === 0) {
+    log('\n⚠️  No items found in this adventure.', 'yellow');
+    log('='.repeat(50) + '\n', 'cyan');
+    return;
+  }
+
+  // Display items in a formatted table
+  log(`\n✅ Found ${allItems.size} unique items (${totalItemOccurrences} total occurrences)\n`, 'green');
+
+  // Header
+  log('┌─────────────────────────────────────────────────────────────────────────────┐', 'cyan');
+  log('│ ID                      │ Name            │ Type      │ Stats/Bonus       │', 'cyan');
+  log('├─────────────────────────────────────────────────────────────────────────────┤', 'cyan');
+
+  // Sort items by ID for consistent display
+  const sortedItems = Array.from(allItems.values()).sort((a, b) =>
+    a.id.localeCompare(b.id)
+  );
+
+  sortedItems.forEach(item => {
+    const id = (item.id || 'unknown').padEnd(23).substring(0, 23);
+    const name = (item.name || 'Unknown').padEnd(15).substring(0, 15);
+    const type = (item.type || 'other').padEnd(9).substring(0, 9);
+
+    // Build stats string
+    let stats = '';
+    if (item.bonus) stats += `Bonus: ${item.bonus}`;
+    if (item.restore) stats += (stats ? ', ' : '') + `Restore: ${item.restore}`;
+    if (!stats) stats = '-';
+    stats = stats.padEnd(17).substring(0, 17);
+
+    log(`│ ${id} │ ${name} │ ${type} │ ${stats} │`, 'reset');
+
+    // Show sections where this item appears
+    const sectionList = item.sections.join(', ');
+    const sectionStr = `  Found in section${item.sections.length > 1 ? 's' : ''}: ${sectionList}`;
+    log(`│ ${sectionStr.padEnd(75).substring(0, 75)} │`, 'blue');
+    log('├─────────────────────────────────────────────────────────────────────────────┤', 'cyan');
+  });
+
+  log('└─────────────────────────────────────────────────────────────────────────────┘\n', 'cyan');
+
+  // Summary by type
+  const typeCount = {};
+  sortedItems.forEach(item => {
+    const type = item.type || 'other';
+    typeCount[type] = (typeCount[type] || 0) + 1;
+  });
+
+  log('Summary by Type:', 'bold');
+  Object.entries(typeCount).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+    log(`  ${type.padEnd(10)}: ${count}`, 'blue');
+  });
+
+  log('\n' + '='.repeat(50) + '\n', 'cyan');
+}
+
+function updateItem(filePath, itemId, updates) {
+  log('\n🔧 Updating Item...', 'cyan');
+  log('='.repeat(50), 'cyan');
+
+  // Read the JSON file
+  let adventure;
+  try {
+    const data = fs.readFileSync(filePath, 'utf-8');
+    adventure = JSON.parse(data);
+  } catch (error) {
+    log(`❌ Error reading JSON file: ${error.message}`, 'red');
+    return;
+  }
+
+  // Track how many items were updated
+  let updatedCount = 0;
+  let sectionsUpdated = [];
+
+  // Find and update items in all sections
+  if (adventure.sections) {
+    adventure.sections.forEach(section => {
+      if (section.addItems && Array.isArray(section.addItems)) {
+        section.addItems.forEach(item => {
+          if (item.id === itemId) {
+            // Apply updates
+            if (updates.name !== undefined) item.name = updates.name;
+            if (updates.type !== undefined) item.type = updates.type;
+            if (updates.bonus !== undefined) {
+              if (updates.bonus === 'remove') {
+                delete item.bonus;
+              } else {
+                item.bonus = updates.bonus;
+              }
+            }
+            if (updates.restore !== undefined) {
+              if (updates.restore === 'remove') {
+                delete item.restore;
+              } else {
+                item.restore = updates.restore;
+              }
+            }
+
+            updatedCount++;
+            sectionsUpdated.push(section.id);
+          }
+        });
+      }
+    });
+  }
+
+  if (updatedCount === 0) {
+    log(`\n❌ Item with ID "${itemId}" not found in the adventure.`, 'red');
+    log('='.repeat(50) + '\n', 'cyan');
+    return;
+  }
+
+  // Write back to file
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(adventure, null, 2));
+    log(`\n✅ Successfully updated ${updatedCount} occurrence${updatedCount > 1 ? 's' : ''} of item "${itemId}"`, 'green');
+    log(`   Updated in section${sectionsUpdated.length > 1 ? 's' : ''}: ${sectionsUpdated.join(', ')}`, 'blue');
+
+    // Show what was changed
+    log('\nChanges applied:', 'cyan');
+    if (updates.name !== undefined) log(`  name: "${updates.name}"`, 'green');
+    if (updates.type !== undefined) log(`  type: "${updates.type}"`, 'green');
+    if (updates.bonus !== undefined) {
+      if (updates.bonus === 'remove') {
+        log(`  bonus: [removed]`, 'yellow');
+      } else {
+        log(`  bonus: "${updates.bonus}"`, 'green');
+      }
+    }
+    if (updates.restore !== undefined) {
+      if (updates.restore === 'remove') {
+        log(`  restore: [removed]`, 'yellow');
+      } else {
+        log(`  restore: "${updates.restore}"`, 'green');
+      }
+    }
+
+    log(`\n📄 File saved: ${filePath}`, 'green');
+  } catch (error) {
+    log(`\n❌ Error writing file: ${error.message}`, 'red');
+  }
+
+  log('='.repeat(50) + '\n', 'cyan');
+}
+
 function validateAdventure(filePath) {
   log('\n📚 Validating Adventure File...', 'cyan');
   log('='.repeat(50), 'cyan');
@@ -786,15 +971,28 @@ function showHelp() {
   log('='.repeat(50), 'cyan');
   log('\nThis tool helps format adventures for the gamebook app.', 'reset');
   log('\nUsage:', 'bold');
-  log('  node formatAdventure.js validate <file>         - Validate adventure format', 'reset');
-  log('  node formatAdventure.js convert <file> [output] - Convert TXT to JSON', 'reset');
-  log('  node formatAdventure.js check <file>            - Check for common issues', 'reset');
+  log('  node formatAdventure.js validate <file>           - Validate adventure format', 'reset');
+  log('  node formatAdventure.js convert <file> [output]   - Convert TXT to JSON', 'reset');
+  log('  node formatAdventure.js check <file>              - Check for common issues', 'reset');
+  log('  node formatAdventure.js list-items <file>         - List all items in JSON adventure', 'reset');
+  log('  node formatAdventure.js update-item <file> <id>   - Update item properties', 'reset');
   log('\nExamples:', 'bold');
   log('  node formatAdventure.js validate my-adventure.txt', 'reset');
   log('  node formatAdventure.js convert my-adventure.txt my-adventure.json', 'reset');
   log('  node formatAdventure.js check my-adventure.txt', 'reset');
+  log('  node formatAdventure.js list-items my-adventure.json', 'reset');
+  log('  node formatAdventure.js update-item my-adventure.json silver-key --name="Golden Key"', 'reset');
+  log('  node formatAdventure.js update-item my-adventure.json sword --type=weapon --bonus="+2"', 'reset');
+  log('\nItem Update Options:', 'bold');
+  log('  --name="New Name"    - Update the item name', 'reset');
+  log('  --type=<type>        - Update type (weapon, armor, potion, key, treasure, other)', 'reset');
+  log('  --bonus=<value>      - Add/update bonus (e.g., "+2", "+1d6")', 'reset');
+  log('  --restore=<value>    - Add/update restore value (e.g., "2d6", "4")', 'reset');
+  log('  --bonus=remove       - Remove bonus property', 'reset');
+  log('  --restore=remove     - Remove restore property', 'reset');
   log('\nSupported Formats:', 'bold');
-  log('  Input:  .txt, .md', 'reset');
+  log('  Input:  .txt, .md (for validate, convert, check)', 'reset');
+  log('  Input:  .json (for list-items, update-item)', 'reset');
   log('  Output: .json', 'reset');
   log('\nFormat Guide:', 'bold');
   log('  - Metadata: "Title: Name", "Author: Name", "Initial SKILL: 6"', 'reset');
@@ -843,9 +1041,47 @@ function main() {
       checkForIssues(filePath);
       break;
 
+    case 'list-items':
+      listItems(filePath);
+      break;
+
+    case 'update-item':
+      const itemId = args[2];
+      if (!itemId) {
+        log('❌ Error: Please provide an item ID', 'red');
+        log('Usage: node formatAdventure.js update-item <file> <item-id> [options]', 'yellow');
+        log('Options: --name="New Name" --type=weapon --bonus="+2" --restore="2d6"', 'yellow');
+        process.exit(1);
+      }
+
+      // Parse update options
+      const updates = {};
+      for (let i = 3; i < args.length; i++) {
+        const arg = args[i];
+        if (arg.startsWith('--name=')) {
+          updates.name = arg.substring(7).replace(/^["']|["']$/g, '');
+        } else if (arg.startsWith('--type=')) {
+          updates.type = arg.substring(7).replace(/^["']|["']$/g, '');
+        } else if (arg.startsWith('--bonus=')) {
+          updates.bonus = arg.substring(8).replace(/^["']|["']$/g, '');
+        } else if (arg.startsWith('--restore=')) {
+          updates.restore = arg.substring(10).replace(/^["']|["']$/g, '');
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        log('❌ Error: No updates specified', 'red');
+        log('Options: --name="New Name" --type=weapon --bonus="+2" --restore="2d6"', 'yellow');
+        log('To remove a property: --bonus=remove --restore=remove', 'yellow');
+        process.exit(1);
+      }
+
+      updateItem(filePath, itemId, updates);
+      break;
+
     default:
       log(`❌ Unknown command: ${command}`, 'red');
-      log('Valid commands: validate, convert, check', 'yellow');
+      log('Valid commands: validate, convert, check, list-items, update-item', 'yellow');
       showHelp();
       process.exit(1);
   }
@@ -856,4 +1092,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { validateAdventure, convertToJSON, checkForIssues };
+module.exports = { validateAdventure, convertToJSON, checkForIssues, listItems, updateItem };
