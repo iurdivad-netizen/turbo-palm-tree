@@ -398,6 +398,72 @@ If you want to enter, turn to 2.
             </div>
         </div>
 
+        <!-- Item Management Section -->
+        <div class="card">
+            <h2 class="card-title">📦 Item Management</h2>
+            <p class="help-text">
+                Manage items in your JSON adventure file. List all items with their stats, and update item properties as needed.
+            </p>
+
+            <div class="button-group">
+                <button class="button button-primary" onclick="listAllItems()">📋 List All Items</button>
+                <button class="button button-secondary" onclick="showUpdateItemDialog()">✏️ Update Item</button>
+            </div>
+
+            <!-- Item List Display -->
+            <div id="item-list-container" class="hidden">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem;">Item List</h3>
+                <div id="item-list" style="overflow-x: auto;"></div>
+            </div>
+
+            <!-- Update Item Dialog -->
+            <div id="update-item-dialog" class="hidden" style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; border: 2px solid #e5e7eb;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Update Item</h3>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Item ID:</label>
+                    <input type="text" id="update-item-id" placeholder="e.g., silver-key" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 0.5rem;">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Name (optional):</label>
+                    <input type="text" id="update-item-name" placeholder="e.g., Golden Key" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 0.5rem;">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Type (optional):</label>
+                    <select id="update-item-type" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 0.5rem;">
+                        <option value="">-- Keep current --</option>
+                        <option value="weapon">weapon</option>
+                        <option value="armor">armor</option>
+                        <option value="potion">potion</option>
+                        <option value="key">key</option>
+                        <option value="treasure">treasure</option>
+                        <option value="other">other</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Bonus (optional):</label>
+                    <input type="text" id="update-item-bonus" placeholder="e.g., +2 or remove" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 0.5rem;">
+                    <small style="color: #6b7280;">Enter "remove" to delete this property</small>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Restore (optional):</label>
+                    <input type="text" id="update-item-restore" placeholder="e.g., 2d6 or remove" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 0.5rem;">
+                    <small style="color: #6b7280;">Enter "remove" to delete this property</small>
+                </div>
+
+                <div class="button-group">
+                    <button class="button button-primary" onclick="applyItemUpdate()">💾 Apply Update</button>
+                    <button class="button button-secondary" onclick="cancelItemUpdate()">❌ Cancel</button>
+                </div>
+
+                <div id="update-result" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+
         <!-- Results Section -->
         <div id="results-container" class="hidden">
             <!-- Validation Results -->
@@ -1823,6 +1889,214 @@ Feel free to modify this template for your own adventure!`
             };
 
             document.getElementById('adventure-input').value = examples[type] || examples.template;
+        }
+
+        // Item Management Functions
+        function listAllItems() {
+            if (!currentJSON) {
+                alert('Please convert your adventure to JSON first!');
+                return;
+            }
+
+            const allItems = new Map();
+            let totalOccurrences = 0;
+
+            // Collect items from all sections
+            if (currentJSON.sections) {
+                currentJSON.sections.forEach(section => {
+                    if (section.addItems && Array.isArray(section.addItems)) {
+                        section.addItems.forEach(item => {
+                            totalOccurrences++;
+                            if (allItems.has(item.id)) {
+                                const existing = allItems.get(item.id);
+                                existing.sections.push(section.id);
+                            } else {
+                                allItems.set(item.id, {
+                                    ...item,
+                                    sections: [section.id]
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+            if (allItems.size === 0) {
+                document.getElementById('item-list').innerHTML = '<p class="warning">⚠️ No items found in this adventure.</p>';
+                document.getElementById('item-list-container').classList.remove('hidden');
+                return;
+            }
+
+            // Build HTML table
+            const sortedItems = Array.from(allItems.values()).sort((a, b) => a.id.localeCompare(b.id));
+
+            let html = `
+                <div style="margin-bottom: 1rem;">
+                    <strong>Found ${allItems.size} unique items (${totalOccurrences} total occurrences)</strong>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 0.5rem; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #f3f4f6;">
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;">ID</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;">Name</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;">Type</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;">Stats</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;">Sections</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sortedItems.forEach((item, index) => {
+                const bgColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
+                let stats = [];
+                if (item.bonus) stats.push(`Bonus: ${item.bonus}`);
+                if (item.restore) stats.push(`Restore: ${item.restore}`);
+                const statsText = stats.length > 0 ? stats.join(', ') : '-';
+
+                html += `
+                    <tr style="background: ${bgColor};">
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;"><code>${item.id}</code></td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;"><strong>${item.name || 'Unknown'}</strong></td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;"><span class="badge badge-info">${item.type || 'other'}</span></td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${statsText}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${item.sections.join(', ')}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            // Add summary by type
+            const typeCount = {};
+            sortedItems.forEach(item => {
+                const type = item.type || 'other';
+                typeCount[type] = (typeCount[type] || 0) + 1;
+            });
+
+            html += '<div style="margin-top: 1rem;"><strong>Summary by Type:</strong><br>';
+            Object.entries(typeCount).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+                html += `<span class="badge badge-info" style="margin: 0.25rem;">${type}: ${count}</span>`;
+            });
+            html += '</div>';
+
+            document.getElementById('item-list').innerHTML = html;
+            document.getElementById('item-list-container').classList.remove('hidden');
+        }
+
+        function showUpdateItemDialog() {
+            if (!currentJSON) {
+                alert('Please convert your adventure to JSON first!');
+                return;
+            }
+
+            document.getElementById('update-item-dialog').classList.remove('hidden');
+            document.getElementById('update-result').innerHTML = '';
+
+            // Clear form
+            document.getElementById('update-item-id').value = '';
+            document.getElementById('update-item-name').value = '';
+            document.getElementById('update-item-type').value = '';
+            document.getElementById('update-item-bonus').value = '';
+            document.getElementById('update-item-restore').value = '';
+        }
+
+        function cancelItemUpdate() {
+            document.getElementById('update-item-dialog').classList.add('hidden');
+            document.getElementById('update-result').innerHTML = '';
+        }
+
+        function applyItemUpdate() {
+            if (!currentJSON) {
+                alert('Please convert your adventure to JSON first!');
+                return;
+            }
+
+            const itemId = document.getElementById('update-item-id').value.trim();
+            if (!itemId) {
+                document.getElementById('update-result').innerHTML = '<p class="error">❌ Please enter an item ID</p>';
+                return;
+            }
+
+            const updates = {};
+            const name = document.getElementById('update-item-name').value.trim();
+            const type = document.getElementById('update-item-type').value;
+            const bonus = document.getElementById('update-item-bonus').value.trim();
+            const restore = document.getElementById('update-item-restore').value.trim();
+
+            if (name) updates.name = name;
+            if (type) updates.type = type;
+            if (bonus) updates.bonus = bonus;
+            if (restore) updates.restore = restore;
+
+            if (Object.keys(updates).length === 0) {
+                document.getElementById('update-result').innerHTML = '<p class="warning">⚠️ No updates specified</p>';
+                return;
+            }
+
+            // Apply updates
+            let updatedCount = 0;
+            const sectionsUpdated = [];
+
+            if (currentJSON.sections) {
+                currentJSON.sections.forEach(section => {
+                    if (section.addItems && Array.isArray(section.addItems)) {
+                        section.addItems.forEach(item => {
+                            if (item.id === itemId) {
+                                if (updates.name) item.name = updates.name;
+                                if (updates.type) item.type = updates.type;
+                                if (updates.bonus) {
+                                    if (updates.bonus === 'remove') {
+                                        delete item.bonus;
+                                    } else {
+                                        item.bonus = updates.bonus;
+                                    }
+                                }
+                                if (updates.restore) {
+                                    if (updates.restore === 'remove') {
+                                        delete item.restore;
+                                    } else {
+                                        item.restore = updates.restore;
+                                    }
+                                }
+                                updatedCount++;
+                                sectionsUpdated.push(section.id);
+                            }
+                        });
+                    }
+                });
+            }
+
+            if (updatedCount === 0) {
+                document.getElementById('update-result').innerHTML = `<p class="error">❌ Item with ID "${itemId}" not found</p>`;
+                return;
+            }
+
+            // Update JSON output
+            document.getElementById('json-output').textContent = JSON.stringify(currentJSON, null, 2);
+
+            // Show success message
+            let changesHtml = '<p class="success">✅ Successfully updated ' + updatedCount + ' occurrence' + (updatedCount > 1 ? 's' : '') + '</p>';
+            changesHtml += '<p class="info">Updated in section' + (sectionsUpdated.length > 1 ? 's' : '') + ': ' + sectionsUpdated.join(', ') + '</p>';
+            changesHtml += '<p><strong>Changes applied:</strong></p><ul style="list-style: disc; margin-left: 1.5rem;">';
+
+            if (updates.name) changesHtml += `<li>name: "${updates.name}"</li>`;
+            if (updates.type) changesHtml += `<li>type: "${updates.type}"</li>`;
+            if (updates.bonus) changesHtml += `<li>bonus: ${updates.bonus === 'remove' ? '[removed]' : '"' + updates.bonus + '"'}</li>`;
+            if (updates.restore) changesHtml += `<li>restore: ${updates.restore === 'remove' ? '[removed]' : '"' + updates.restore + '"'}</li>`;
+
+            changesHtml += '</ul>';
+            changesHtml += '<p class="info">💡 The JSON output has been updated. You can download it or copy it.</p>';
+
+            document.getElementById('update-result').innerHTML = changesHtml;
+
+            // Refresh item list if it's visible
+            if (!document.getElementById('item-list-container').classList.contains('hidden')) {
+                listAllItems();
+            }
         }
     </script>
 </body>
