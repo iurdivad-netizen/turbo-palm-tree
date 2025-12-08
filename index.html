@@ -2236,7 +2236,8 @@
                 if (nextSection.modifyStats) {
                     GameState.modifyStats(nextSection.modifyStats);
                 }
-                if (nextSection.addItems) {
+                // Only give items if this section hasn't been visited before
+                if (nextSection.addItems && !GameState.visitedSections.has(targetSection)) {
                     nextSection.addItems.forEach(item => GameState.addItem(item));
                 }
                 if (nextSection.removeItems) {
